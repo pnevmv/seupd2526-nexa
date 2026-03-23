@@ -1,8 +1,6 @@
-# Search Engines (SE) - Repository Template
+# Search Engines (SE) - NEXA Group - CheckThat! CLEF 2026 Task 1
 
-This repository is a template repository for the homeworks to be developed in the Search Engines course. A.Y. 2025/2026.
-
-The homeworks are carried out by groups of students and consists in participating to one of the labs organized yearly by [CLEF](https://www.clef-initiative.eu/) (Conference and Labs of the Evaluation Forum).
+This repository will contains the code and papers produced in the Search Engines course. A.Y. 2025/2026 for the participation of the group NEXA at [CheckThat! 2026 Task 1](https://checkthat.gitlab.io/clef2026/task1/) at [CLEF 2026](https://clef2026.clef-initiative.eu/).
 
 *Search Engines* is a course of the
 
@@ -11,7 +9,15 @@ The homeworks are carried out by groups of students and consists in participatin
 
 *Search Engines* is part of the teaching activities of the [Intelligent Interactive Information Access (IIIA) Hub](http://iiia.dei.unipd.it/).
 
-### Organisation of the repository ###
+## Group members
+- Paul Arlot - paullouisjean.arlot@studenti.unipd.it
+- Andrea Di Tillo - andrea.ditillo@studenti.unipd.it
+- Gaute Greiff Flagstad - gautegreiff.flaegstad@studenti.unipd.it
+- Bita Khashechian - bita.khashechian@studenti.unipd.it
+- Danil Smirnov - danil.smirnov@studenti.unipd.it
+- Marco Tomaiuoli - marco.tomaiuoli@studenti.unipd.it
+
+## Organisation of the repository
 
 The repository is organised as follows:
 
@@ -22,14 +28,8 @@ The repository is organised as follows:
 * `homework-2`: this folder contains the final paper submitted to CLEF.
 * `slides`: this folder contains the slides used for presenting the conducted project.
 
-### License ###
+## License
 
 All the contents of this repository are shared using the [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
 
 ![CC logo](https://i.creativecommons.org/l/by-sa/4.0/88x31.png)
-
-
-
-## Organization of the `code` folder
-
-The `code` folder serves as starter for the participation at [CheckThat! 2026](https://checkthat.gitlab.io/clef2026/task1/) at [CLEF 2026](https://clef2026.clef-initiative.eu/).
