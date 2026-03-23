@@ -53,6 +53,7 @@
 *.class
 target/
 log/
+javadoc/
 
 # Tomcat Shell files
 tomcat-logs/
