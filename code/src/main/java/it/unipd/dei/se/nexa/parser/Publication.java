@@ -96,8 +96,8 @@ public class Publication {
         Document doc = new Document();
 
         doc.add(new IntField("pubkey", pubkey, Field.Store.YES));
-        doc.add(new TextField("title", title, Field.Store.NO));
-        doc.add(new TextField("abstract", abstract_text, Field.Store.NO));
+        doc.add(new TextField("title", title, Field.Store.YES));
+        doc.add(new TextField("abstract", abstract_text, Field.Store.YES));
         doc.add(new TextField("venue", venue, Field.Store.NO));
         doc.add(new TextField("authors", authors, Field.Store.NO));
         return doc;

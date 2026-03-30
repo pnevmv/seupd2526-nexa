@@ -72,5 +72,8 @@ tomcat-logs/
 # Datasets
 datasets/
 
+# Index
+index/
+
 # OSX
 .DS_Store
