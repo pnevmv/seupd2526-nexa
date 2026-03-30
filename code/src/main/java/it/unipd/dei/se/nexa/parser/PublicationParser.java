@@ -46,10 +46,13 @@ public class PublicationParser implements Iterable<Publication> {
         }
         String filePath = args[0];
         PublicationParser parser = new PublicationParser(filePath);
+        int i = 0;
         for (Publication p : parser) {
+            i+=1;
             System.out.println(p);
             System.out.println("==================================");
         }
+        System.out.println("There are " + i + " publications in the collection");
     }
 
     

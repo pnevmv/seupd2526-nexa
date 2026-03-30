@@ -1,5 +1,10 @@
 package it.unipd.dei.se.nexa.parser;
 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.TextField;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -56,7 +61,7 @@ public class Publication {
      * 
      * @return the title
      */
-    public Object getTitle() {
+    public String getTitle() {
         return title;
     }
 
@@ -65,7 +70,7 @@ public class Publication {
      * 
      * @return the abstract
      */
-    public Object getAbstract() {
+    public String getAbstract() {
         return abstract_text;
     }
 
@@ -74,7 +79,7 @@ public class Publication {
      * 
      * @return the venue
      */
-    public Object getVenue() {
+    public String getVenue() {
         return venue;
     }
 
@@ -83,7 +88,18 @@ public class Publication {
      * 
      * @return the authors
      */
-    public Object getAuthors() {
+    public String getAuthors() {
         return authors;
+    }
+
+    public Document toLuceneDocument() {
+        Document doc = new Document();
+
+        doc.add(new IntField("pubkey", pubkey, Field.Store.YES));
+        doc.add(new TextField("title", title, Field.Store.NO));
+        doc.add(new TextField("abstract", abstract_text, Field.Store.NO));
+        doc.add(new TextField("venue", venue, Field.Store.NO));
+        doc.add(new TextField("authors", authors, Field.Store.NO));
+        return doc;
     }
 }
