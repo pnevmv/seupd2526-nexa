@@ -1,4 +1,4 @@
-package it.unipd.dei.se.nexa.analyser;
+package it.unipd.dei.se.nexa.config.tokenizer;
 
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.core.LetterTokenizer;
