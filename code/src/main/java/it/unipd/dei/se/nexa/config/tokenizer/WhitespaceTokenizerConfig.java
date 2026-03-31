@@ -3,7 +3,7 @@ package it.unipd.dei.se.nexa.config.tokenizer;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 
-public record WhitespaceTokenizerConfig() implements ITokenizerConfig {
+public record WhitespaceTokenizerConfig() implements TokenizerConfig {
     @Override
     public Tokenizer toRuntime() {
         return new WhitespaceTokenizer();
