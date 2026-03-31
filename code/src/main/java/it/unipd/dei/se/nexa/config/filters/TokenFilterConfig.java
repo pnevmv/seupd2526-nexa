@@ -24,7 +24,7 @@ import java.text.ParseException;
         @JsonSubTypes.Type(value = RegexFilterConfig.class, name = "regex"),
         @JsonSubTypes.Type(value = TrimFilterConfig.class, name = "trim")
 })
-public interface ITokenFilterConfig {
+public interface TokenFilterConfig {
     TokenFilter toRuntime(TokenStream tokenStream) throws IOException, ParseException;
 }
 
