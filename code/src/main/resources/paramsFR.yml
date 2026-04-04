@@ -1,0 +1,152 @@
+#File used to set up all the parameters for the project
+
+# ------------------------------------------ PATHS ---------------------------------------------------------------------
+
+language: French
+
+#path to the sqlite collection_db
+dbPath: src/main/java/de/ir_lab/longeval24/resources/collection_db.db
+
+#path to the tokenizerModel
+tokenizerModel: code/java/src/main/resources/openNLPmodels/fr-token.bin
+
+#path to the sentenceModel
+sentenceModel: code/java/src/main/resources/openNLPmodels/fr-sent.bin
+
+#path to the posModel
+posModel: code/java/src/main/resources/openNLPmodels/fr-pos.bin
+
+#path to the lemmatizerModel
+lemmatizerModel: code/java/src/main/resources/openNLPmodels/fr-lemmatizer.bin
+
+#path to the synonyms file
+synonymsFile: code/java/src/main/resources/synonyms/synonyms.txt
+
+#path to the language detector model
+languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin
+
+# ------------------------------------------ PARSER --------------------------------------------------------------------
+
+#number of rows for the start feature
+numberOfStartRows: 5
+
+# ------------------------------------------ ANALYZER ------------------------------------------------------------------
+
+#minimum length of a token (minimum number of characters per token)
+minLength: 2
+
+#minimum length of a token (minimum number of characters per token)
+maxLength: 36
+
+#use the Ngrams filter: select true if you want to use it, false otherwise
+nGramsFilter: false
+
+#length of nGram (for words): select the number of shingles
+shingleSize: 3
+
+#use the PositionFilter: select true if you want to use it, false otherwise
+positionFilter: false
+
+#increment of position to ensure they are consecutive, DO NOT CHANGE (CHECK IF IS IT 1)
+positionIncrement: 1
+
+#use the expansionFilter: select true if you want to use it, false otherwise
+expansionFilter: false
+
+#use the POSFilter from openNLP: select true if you want to use it, false otherwise
+posOpnNLPFilter: false
+
+#use repeatedLetterFilter: select true if you want to use it, false otherwise
+repeatedLetterFilter: false
+
+#type of tokenizer to use: select one from [Whitespace, Standard, Letter, Nlp]
+tokenizerType: Letter
+
+#customized stop list
+#set the stop list path if it should be used, otherwise leave empty
+customStopList: code/java/src/main/resources/stoplists/stopList40FR-10EN.txt
+
+#type of stemmer to use for French: select on from [FrenchMinimal, FrenchLight, SnowBall, Nlp, None]
+stemFilter: None
+
+# ------------------------------------------ SEARCHER ------------------------------------------------------------------
+
+#use only the first n topics of a query
+maxTokens: 50
+
+#use correct spelling: select true if you want to use it, false otherwise
+correctSpelling: false
+
+#use dictionary to check the query: select true if you want to use it, false otherwise
+dictionary: false
+
+#use the start of the document: select true if you want to use it, false otherwise
+start: false
+
+#use the highlights of the document: select true if you want to use it, false otherwise
+highlight: false
+
+#use the Ngrams: select true if you want to use it, false otherwise
+nGrams: false
+
+#use the Synonyms: select true if you want to use it, false otherwise
+synonyms: false
+
+#use the Fuzzy: select true if you want to use it, false otherwise
+fuzzy: false
+
+#use the phrase: select true if you want to use it, false otherwise
+phrase: false
+
+#use the word2Vec query expansion: select true if you want to use it, false otherwise
+useWord2Vec: false
+
+#use the prf: select true if you want to use it, false otherwise
+prf: false
+
+#number of docs retrieved for prf
+numOfDocsToRetrieveForPrf: 5
+
+#number of prf terms we want to generate
+numOfTokenFromPrf: 4
+
+#use API for query expansion: select true if you want to use it, false otherwise
+useLLMExpansion: false
+
+#number of LLM terms we want to generate
+numOfTokenFromLLM: 4
+
+#url used for LLM API request:
+llmServiceUrl: https://api.openai.com/v1/chat/completions
+
+#use the reRank: select true if you want to use it, false otherwise
+reRank: false
+
+#reranker service [Local, Cohere]
+reRankEndPoint: Local
+
+#use the heuristic version of reRank: select true if you want to use it, false otherwise
+reRankHeuristic: false
+
+# number of documents we want to rerank
+numOfDocsToRerank: 100
+
+# ------------------------------------------ RUNS SET UP ---------------------------------------------------------------
+
+#path to the collection
+collectionPath:
+
+#path to the topics file (queries)
+topics:
+
+# path to the index
+indexPath: "code/experiment/index"
+
+# name of the run
+runID:
+
+# path of the directory of the runs
+runPath: runs
+
+#number of docs to retrieve
+maxDocsRetrieved: 1000
