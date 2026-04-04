@@ -25,7 +25,7 @@
 
 	<build>
 		<defaultGoal>compile</defaultGoal>
-		<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
+		<sourceDirectory>code/src/main/java</sourceDirectory>
 		<directory>${basedir}/target</directory>
 		<finalName>${project.artifactId}-${project.version}</finalName>
 
