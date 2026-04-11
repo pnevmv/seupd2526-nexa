@@ -1,4 +1,4 @@
-package package it.unipd.dei.se.nexa.config.stemmer;
+package it.unipd.dei.se.nexa.config.stemmer;
 
 import it.unipd.dei.se.nexa.config.stemmer.en.EnglishMinimalStemFilterConfig;
 //import for other languages

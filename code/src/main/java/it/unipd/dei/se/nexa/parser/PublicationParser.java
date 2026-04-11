@@ -1,6 +1,6 @@
 package it.unipd.dei.se.nexa.parser;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.util.Iterator;
@@ -22,12 +22,16 @@ public class PublicationParser implements Iterable<Publication> {
     /**
      * Create an iterable on the publications of the collection
      * 
-     * @param filePath - Path to the collection json file
+     * @param filePath - Path to the collection JSON file
      */
     public PublicationParser(String filePath) {
-        File jsonFile = new File(filePath);
-        ObjectMapper objectMapper = new ObjectMapper();
-        this.iterator = objectMapper.readerFor(Publication.class).readValues(jsonFile);
+        try {
+            File jsonFile = new File(filePath);
+            ObjectMapper objectMapper = new ObjectMapper();
+            this.iterator = objectMapper.readerFor(Publication.class).readValues(jsonFile);
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading publications file", e);
+        }
     }
 
     @Override
