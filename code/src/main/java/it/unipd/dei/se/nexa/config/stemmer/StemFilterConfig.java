@@ -1,6 +1,8 @@
 package it.unipd.dei.se.nexa.config.stemmer;
 
 import it.unipd.dei.se.nexa.config.stemmer.en.EnglishMinimalStemFilterConfig;
+import it.unipd.dei.se.nexa.config.stemmer.en.EnglishPorterStemFilterConfig;
+import it.unipd.dei.se.nexa.config.stemmer.en.EnglishKStemFilterConfig;
 //import for other languages
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
