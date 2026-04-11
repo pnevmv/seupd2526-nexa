@@ -5,9 +5,9 @@ import java.io.StringReader;
 import java.text.ParseException;
 import java.util.List;
 
-import it.unipd.dei.se.nexa.config.filters.ITokenFilterConfig;
-import it.unipd.dei.se.nexa.config.stemmer.IStemFilterConfig;
-import it.unipd.dei.se.nexa.config.config.tokenizer.ITokenizerConfig;
+import it.unipd.dei.se.nexa.config.filters.TokenFilterConfig;
+import it.unipd.dei.se.nexa.config.stemmer.StemFilterConfig;
+import it.unipd.dei.se.nexa.config.config.tokenizer.TokenizerConfig;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
@@ -23,9 +23,9 @@ import org.apache.lucene.analysis.LowerCaseFilter;
 
 @RequiredArgsConstructor
 public class CustomAnalyzer extends Analyzer {
-    private final List<ITokenFilterConfig> tokenFilters;
-    private final ITokenizerConfig tokenizerConfig;
-    private final IStemFilterConfig stemFilterConfig;
+    private final List<TokenFilterConfig> tokenFilters;
+    private final TokenizerConfig tokenizerConfig;
+    private final StemFilterConfig stemFilterConfig;
 
 
     @Override
@@ -36,7 +36,7 @@ public class CustomAnalyzer extends Analyzer {
         try {
             TokenStream tokens = tokenizer;
 
-            for (ITokenFilterConfig tokenFilter : tokenFilters) {
+            for (TokenFilterConfig tokenFilter : tokenFilters) {
                 tokens = tokenFilter.toRuntime(tokens);
             }
 
