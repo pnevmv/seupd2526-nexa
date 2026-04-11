@@ -21,8 +21,8 @@ public class PublicationParser implements Iterable<Publication> {
 
     /**
      * Create an iterable on the publications of the collection
-     * 
-     * @param filePath - Path to the collection JSON file
+     *
+     * @param filePath Path to the collection JSON file
      */
     public PublicationParser(String filePath) {
         try {
@@ -38,26 +38,4 @@ public class PublicationParser implements Iterable<Publication> {
     public Iterator<Publication> iterator() {
         return this.iterator;
     }
-
-    /**
-     * Prints all the publications of the collection.
-     * @param args command-line arguments, where {@code args[0]} is the path to the file
-     */
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("You must indicate the path in first argument");
-            System.exit(1);
-        }
-        String filePath = args[0];
-        PublicationParser parser = new PublicationParser(filePath);
-        int i = 0;
-        for (Publication p : parser) {
-            i+=1;
-            System.out.println(p);
-            System.out.println("==================================");
-        }
-        System.out.println("There are " + i + " publications in the collection");
-    }
-
-    
 }
