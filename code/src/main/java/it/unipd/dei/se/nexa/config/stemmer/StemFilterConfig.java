@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = EnglishMinimalStemFilterConfig.class, name = "english_minimal"),
+        @JsonSubTypes.Type(value = EnglishPorterStemFilterConfig.class, name = "english_porter"),
+        @JsonSubTypes.Type(value = EnglishKStemFilterConfig.class, name = "english_kstem")
 //        @JsonSubTypes.Type(value = FrenchMinimalStemFilterConfig.class, name = "french_minimal"),
 //        @JsonSubTypes.Type(value = FrenchLightStemFilterConfig.class, name = "french_light"),
 //        @JsonSubTypes.Type(value = FrenchSnowballStemFilterConfig.class, name = "french_snowball"),
