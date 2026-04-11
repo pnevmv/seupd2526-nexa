@@ -9,17 +9,12 @@ import it.unipd.dei.se.nexa.config.filters.TokenFilterConfig;
 import it.unipd.dei.se.nexa.config.stemmer.StemFilterConfig;
 import it.unipd.dei.se.nexa.config.config.tokenizer.TokenizerConfig;
 
+import lombok.RequiredArgsConstructor;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.TokenStream;
 
-import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-
-import it.unipd.dei.se.nexa.parser.Publication;
-import it.unipd.dei.se.nexa.parser.PublicationParser;
-
-import org.apache.lucene.analysis.LowerCaseFilter;
 
 @RequiredArgsConstructor
 public class CustomAnalyzer extends Analyzer {

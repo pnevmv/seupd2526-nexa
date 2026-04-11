@@ -22,7 +22,7 @@ import org.apache.lucene.analysis.Analyzer;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = GenericAnalyzerConfig.class, name = "generic"),
+        @JsonSubTypes.Type(value = EnglishAnalyzerConfig.class, name = "english"),
 //        @JsonSubTypes.Type(value = FrenchAnalyzerConfig.class, name = "french")
 })
 public interface AnalyzerConfig {
