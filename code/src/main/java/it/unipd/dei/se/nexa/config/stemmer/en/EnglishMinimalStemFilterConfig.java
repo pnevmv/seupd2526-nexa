@@ -1,4 +1,4 @@
-package package it.unipd.dei.se.nexa.config.stemmer.en;
+package it.unipd.dei.se.nexa.config.stemmer.en;
 
 import it.unipd.dei.se.nexa.config.stemmer.StemFilterConfig;
 import org.apache.lucene.analysis.TokenFilter;

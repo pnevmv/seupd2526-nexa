@@ -11,7 +11,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.FSDirectory;
 
-import it.unipd.dei.se.nexa.analyser.PublicationAnalyser;
+import it.unipd.dei.se.nexa.analyzer.PublicationAnalyser;
 import it.unipd.dei.se.nexa.parser.Publication;
 import it.unipd.dei.se.nexa.parser.PublicationParser;
 

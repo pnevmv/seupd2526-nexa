@@ -1,6 +1,6 @@
 package it.unipd.dei.se.nexa.parser;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.util.Iterator;
@@ -21,39 +21,21 @@ public class PublicationParser implements Iterable<Publication> {
 
     /**
      * Create an iterable on the publications of the collection
-     * 
-     * @param filePath - Path to the collection json file
+     *
+     * @param filePath Path to the collection JSON file
      */
     public PublicationParser(String filePath) {
-        File jsonFile = new File(filePath);
-        ObjectMapper objectMapper = new ObjectMapper();
-        this.iterator = objectMapper.readerFor(Publication.class).readValues(jsonFile);
+        try {
+            File jsonFile = new File(filePath);
+            ObjectMapper objectMapper = new ObjectMapper();
+            this.iterator = objectMapper.readerFor(Publication.class).readValues(jsonFile);
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading publications file", e);
+        }
     }
 
     @Override
     public Iterator<Publication> iterator() {
         return this.iterator;
     }
-
-    /**
-     * Prints all the publications of the collection.
-     * @param args command-line arguments, where {@code args[0]} is the path to the file
-     */
-    public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("You must indicate the path in first argument");
-            System.exit(1);
-        }
-        String filePath = args[0];
-        PublicationParser parser = new PublicationParser(filePath);
-        int i = 0;
-        for (Publication p : parser) {
-            i+=1;
-            System.out.println(p);
-            System.out.println("==================================");
-        }
-        System.out.println("There are " + i + " publications in the collection");
-    }
-
-    
 }

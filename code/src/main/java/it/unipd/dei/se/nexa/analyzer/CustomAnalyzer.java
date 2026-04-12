@@ -1,31 +1,34 @@
-package it.unipd.dei.se.nexa.analyser;
+package it.unipd.dei.se.nexa.analyzer;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.text.ParseException;
 import java.util.List;
 
 import it.unipd.dei.se.nexa.config.filters.TokenFilterConfig;
 import it.unipd.dei.se.nexa.config.stemmer.StemFilterConfig;
-import it.unipd.dei.se.nexa.config.config.tokenizer.TokenizerConfig;
-
-import lombok.RequiredArgsConstructor;
+import it.unipd.dei.se.nexa.config.tokenizer.TokenizerConfig;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.TokenStream;
 
-
-@RequiredArgsConstructor
 public class CustomAnalyzer extends Analyzer {
     private final List<TokenFilterConfig> tokenFilters;
     private final TokenizerConfig tokenizerConfig;
     private final StemFilterConfig stemFilterConfig;
 
+    public CustomAnalyzer(
+            List<TokenFilterConfig> tokenFilters,
+            TokenizerConfig tokenizerConfig,
+            StemFilterConfig stemFilterConfig
+    ) {
+        this.tokenFilters = tokenFilters;
+        this.tokenizerConfig = tokenizerConfig;
+        this.stemFilterConfig = stemFilterConfig;
+    }
 
     @Override
     protected TokenStreamComponents createComponents(String fieldName) {
-
         Tokenizer tokenizer = tokenizerConfig.toRuntime();
 
         try {
