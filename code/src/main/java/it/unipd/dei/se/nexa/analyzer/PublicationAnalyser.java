@@ -1,4 +1,4 @@
-package it.unipd.dei.se.nexa.analyser;
+package it.unipd.dei.se.nexa.analyzer;
 
 import java.io.IOException;
 import java.io.StringReader;
