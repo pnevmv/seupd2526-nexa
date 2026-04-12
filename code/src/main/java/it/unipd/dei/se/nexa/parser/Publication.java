@@ -52,7 +52,7 @@ public class Publication {
      * Returns the pubkey
      * @return the pubkey
      */
-    public Object getPubkey() {
+    public int getPubkey() {
         return pubkey;
     }
 
