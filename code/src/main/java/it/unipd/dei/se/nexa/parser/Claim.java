@@ -14,8 +14,12 @@ public class Claim {
     @JsonProperty("index")
     private int index;
 
-    @JsonProperty("text")
     private String text;
+
+    @JsonProperty("text")
+    public void setText(String text) {
+        this.text = CommonParser.cleanText(text);
+    }
 
     @JsonProperty("pubkey")
     private int pubkey;
