@@ -1,6 +1,7 @@
 package it.unipd.dei.se.nexa.parser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.Iterator;
@@ -35,7 +36,7 @@ public class PublicationParser implements Iterable<Publication> {
     }
 
     @Override
-    public Iterator<Publication> iterator() {
+    public @NotNull Iterator<Publication> iterator() {
         return this.iterator;
     }
 }
