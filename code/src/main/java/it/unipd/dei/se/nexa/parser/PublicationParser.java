@@ -1,42 +1,99 @@
 package it.unipd.dei.se.nexa.parser;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
- * Parses the publications for the CheckThat! 2026 Task 1 dataset.
- * <p>
- * This class provides an iterator to read through the JSON collection data,
- * allowing for processing of the {@link Publication} objects.
- *
- * @see <a href=
- *      "https://huggingface.co/datasets/sschellhammer/CT26_Task1_SourceRetrievalForScientificWebClaims/blob/main/collection_data.json">CheckThat!
- *      2026 Task 1 Collection Data</a>
+ * Represents a document parser for Publications.
  */
-public class PublicationParser implements Iterable<Publication> {
-
-    private final Iterator<Publication> iterator;
+public abstract class PublicationParser implements Iterator<Publication>, Iterable<Publication> {
 
     /**
-     * Create an iterable on the publications of the collection
-     *
-     * @param filePath Path to the collection JSON file
+     * Indicates whether there is another Publication to return.
      */
-    public PublicationParser(String filePath) {
-        try {
-            File jsonFile = new File(filePath);
-            ObjectMapper objectMapper = new ObjectMapper();
-            this.iterator = objectMapper.readerFor(Publication.class).readValues(jsonFile);
-        } catch (Exception e) {
-            throw new RuntimeException("Error reading publications file", e);
+    protected boolean next = true;
+
+    /**
+     * The reader to be used to parse document(s).
+     */
+    protected final Reader in;
+
+    /**
+     * Represents the error message indicating that a Reader object cannot be null.
+     */
+    public static final String NULL_READER = "Reader cannot be null";
+
+    /**
+     * Creates a new document parser.
+     *
+     * @param in the reader to the document(s) to be parsed.
+     * @throws NullPointerException if {@code in} is {@code null}.
+     */
+    protected PublicationParser(final Reader in) {
+        if (in == null) {
+            throw new NullPointerException(NULL_READER);
         }
+        this.in = in;
     }
 
     @Override
-    public @NotNull Iterator<Publication> iterator() {
-        return this.iterator;
+    public final Iterator<Publication> iterator() {
+        return this;
     }
+
+    @Override
+    public boolean hasNext() {
+        return next;
+    }
+
+    @Override
+    public final Publication next() {
+        if (!next) {
+            throw new NoSuchElementException("No more documents to parse.");
+        }
+
+        try {
+            return parse();
+        } finally {
+            try {
+                // we reached the end of the file
+                if (!next) {
+                    in.close();
+                }
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to close the reader.", e);
+            }
+        }
+    }
+
+    /**
+     * Creates a new {@code PublicationParser}.
+     *
+     * @param cls the class of the document parser to be instantiated.
+     * @param in  the reader to the document(s) to be parsed.
+     * @return a new instance of {@code PublicationParser} for the given class.
+     */
+    public static PublicationParser create(Class<? extends PublicationParser> cls, Reader in) {
+        if (cls == null) {
+            throw new NullPointerException("Document parser class cannot be null.");
+        }
+        if (in == null) {
+            throw new NullPointerException(NULL_READER);
+        }
+
+        try {
+            return cls.getConstructor(Reader.class).newInstance(in);
+        } catch (Exception e) {
+            throw new IllegalStateException(String.format("Unable to instantiate document parser %s.", cls.getName()), e);
+        }
+    }
+
+    /**
+     * Performs the actual parsing of the document.
+     *
+     * @return the parsed document.
+     */
+    protected abstract Publication parse();
 }
