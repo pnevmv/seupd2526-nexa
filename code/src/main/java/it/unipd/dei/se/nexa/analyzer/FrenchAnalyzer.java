@@ -3,7 +3,7 @@ package it.unipd.dei.se.nexa.analyzer;
 import java.io.IOException;
 import java.io.StringReader;
 
-import it.unipd.dei.se.nexa.analyzer.filters.repetedLetterFilter;
+import it.unipd.dei.se.nexa.analyzer.filters.*;
 import it.unipd.dei.se.nexa.utility.ConfigManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -28,8 +28,7 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.util.ElisionFilter;
 import org.tartarus.snowball.ext.FrenchStemmer;
 
-import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadSentenceDetectorModel;
-import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadTokenizerModel;
+import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.*;
 
 
 /**
@@ -261,7 +260,7 @@ public class FrenchAnalyzer extends Analyzer {
             filter = new repetedLetterFilter(filter);
 
         if (Boolean.TRUE.equals(config.getBool("expansionFilter")))
-            filter = new AbbreviationExpansionFilter(filter, AnalyzerUtil.getAbbreviationMap());
+            filter = new AbbreviationExpansionFilter(filter, AnalyzerUtil.getAbbreviationMap("fr"));
 
         filter = new ICUFoldingFilter(filter);
         filter = new NBSPFilter(filter);

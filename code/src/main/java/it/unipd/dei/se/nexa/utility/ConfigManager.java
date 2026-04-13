@@ -23,7 +23,7 @@ public class ConfigManager {
     private final Map<String, Object> config;
 
     // Relative path to the configuration directory
-    private static final String CONFIG_DIR = "src/main/config/";
+    private static final String CONFIG_DIR = "code/src/main/config/";
 
     /**
      * Private constructor to load a specific file from the config directory.

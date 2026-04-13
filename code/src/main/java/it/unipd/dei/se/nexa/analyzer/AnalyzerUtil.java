@@ -31,8 +31,7 @@ public class AnalyzerUtil {
 
     private static final ConfigManager config = ConfigManager.getInstance("fr");
 
-    private AnalyzerUtil() {
-    }
+    private AnalyzerUtil() {}
 
     /**
      * Loads a stop list from a file and returns it as a CharArraySet.
@@ -202,10 +201,9 @@ public class AnalyzerUtil {
         return model;
     }
 
-    public static Map<String, String> getAbbreviationMap() {
+    public static Map<String, String> getAbbreviationMap(String language) {
         Map<String, String> abbreviationMap = new HashMap<>();
-        String filePath = "src/main/java/resources/expandWords.csv";
-
+        String filePath = "code/src/main/java/resources/".concat(language).concat("/expandWords.csv");
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -219,7 +217,6 @@ public class AnalyzerUtil {
                     String abbreviation = parts[0].trim();
                     String expansion = parts[1].trim();
 
-                    // Aggiungi alla mappa
                     abbreviationMap.put(abbreviation, expansion);
                 }
             }
