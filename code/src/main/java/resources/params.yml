@@ -1,8 +1,11 @@
 #File used to set up all the parameters for the project
 
 # ------------------------------------------ PATHS ---------------------------------------------------------------------
-
+#language to use: select one from [French, English]
 language: French
+
+#path to the sqlite collection_db
+dbPath: src/main/java/de/ir_lab/longeval24/resources/collection_db.db
 
 #path to the tokenizerModel
 tokenizerModel: src/main/java/resources/openNLPmodels/fr-token.bin
@@ -26,9 +29,6 @@ languageDetectorModel: src/main/java/resources/openNLPmodels/langdetect-183.bin
 
 #number of rows for the start feature
 numberOfStartRows: 5
-
-#number of rows for the end feature
-numberOfEndRows: 5
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ tokenizerType: Letter
 
 #customized stop list
 #set the stop list path if it should be used, otherwise leave empty
-customStopList:
+customStopList: src/main/java/resources/stoplists/stopList40FR-10EN.txt
 
 #type of stemmer to use for French: select on from [FrenchMinimal, FrenchLight, SnowBall, Nlp, None]
 stemFilter: None
@@ -119,6 +119,7 @@ numOfTokenFromLLM: 4
 #url used for LLM API request:
 llmServiceUrl: https://api.openai.com/v1/chat/completions
 
+
 #use the reRank: select true if you want to use it, false otherwise
 reRank: false
 
@@ -126,24 +127,24 @@ reRank: false
 reRankEndPoint: Local
 
 #use the heuristic version of reRank: select true if you want to use it, false otherwise
-reRankHeuristic: false
+reRank_heuristic: true
 
 # number of documents we want to rerank
-numOfDocsToRerank: 100
+numOfDocsToRerank: 50
 
 # ------------------------------------------ RUNS SET UP ---------------------------------------------------------------
 
 #path to the collection
-collectionPath:
+collectionPath: C:\Users\Alessandro Di Frenna\2023-01_fr\collection
 
 #path to the topics file (queries)
-topics:
+topics: C:\Users\Alessandro Di Frenna\2023-01_queries.txt
 
 # path to the index
 indexPath: "code/experiment/index"
 
 # name of the run
-runID:
+runID: run-default-2023-01_fr
 
 # path of the directory of the runs
 runPath: runs
