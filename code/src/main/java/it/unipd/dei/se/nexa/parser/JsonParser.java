@@ -68,7 +68,7 @@ public class JsonParser extends CommonParser {
     }
 
     public static void main(String[] args) {
-        String jsonInput = "[" +
+        String pubJsonInput = "[" +
                 "  {" +
                 "    \"pubkey\": 999," +
                 "    \"title\": \"Stress Test Evoluto\"," +
@@ -76,20 +76,41 @@ public class JsonParser extends CommonParser {
                 "Citazioni quadre [1, 2-5] e citazioni autore (Rossi et al., 2023). " +
                 "Entità HTML: p &lt; 0.05 &amp; spazio&nbsp;unito. " +
                 "Simboli: 37°C e 0.5±0.1. Sezioni: Methods: i risultati sono ottimi. " +
-                "Emoji finali: 🚀🔥🏥🧪\"," + // <-- nota: qui chiudiamo il JSON con \",
+                "Emoji finali: 🚀🔥🏥🧪\"," +
                 "    \"venue\": \"Journal of AI Stress Tests\"," +
                 "    \"authors\": \"A. Collaborator, B. Assistant\"" +
                 "  }" +
                 "]";
 
-        try (java.io.StringReader reader = new java.io.StringReader(jsonInput)) {
-            it.unipd.dei.se.nexa.parser.JsonParser p = new it.unipd.dei.se.nexa.parser.JsonParser(reader);
+        String claimJsonInput = "[" +
+                "  {" +
+                "    \"index\":5," +
+                "    \"text\":\"@KYT_ThatsME @EricTopol @NathanGrubaugh @angie_rasmussen @DrDenaGrayson @Laurie_Garrett @R_H_Ebright @Ayjchan @DrEricDing @DrZoeHyde CDC EVALI study only monitored cases w\\\\/ a record of vaping in previous 90 days & with seriousness necessitating hospital admission. But at the time of the first outbreak in WI & IL, there were 2x the ER visits for mysterious, critical lung disease in 11-34yo. 🚨\","
+                +
+                "    \"pubkey\":8474" +
+                "  }" +
+                "]";
 
+        System.out.println("=== TEST PUBLICATION PARSER ===");
+        try (java.io.StringReader reader = new java.io.StringReader(pubJsonInput)) {
+            it.unipd.dei.se.nexa.parser.JsonParser p = new it.unipd.dei.se.nexa.parser.JsonParser(reader);
             for (it.unipd.dei.se.nexa.parser.Publication d : p) {
-                System.out.printf("%n%n------------------------------------%n%s%n%n%n", d.toString());
+                System.out.printf("%n%s%n", d.toString());
             }
         } catch (Exception e) {
-            System.err.println("Errore durante il parsing della stringa: " + e.getMessage());
+            System.err.println("Error during Publication parsing: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        System.out.println("\n=== TEST CLAIM PARSER ===");
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            Claim[] claims = mapper.readValue(claimJsonInput, Claim[].class);
+            for (Claim c : claims) {
+                System.out.printf("%n%s%n", c.toString());
+            }
+        } catch (Exception e) {
+            System.err.println("Error during Claim parsing: " + e.getMessage());
             e.printStackTrace();
         }
     }
