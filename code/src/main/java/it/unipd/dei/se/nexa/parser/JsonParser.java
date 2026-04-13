@@ -20,7 +20,7 @@ public class JsonParser extends PublicationParser {
     private static final String JSON_AUTHORS = "authors";
 
     private final com.fasterxml.jackson.core.JsonParser jsonParser;
-    private final Iterator<JsonNode> docIterator;
+    private final Iterator<JsonNode> pubIterator;
 
     private static final Pattern HTML = Pattern.compile("<[^>]*>");
     private static final Pattern URL = Pattern.compile("https?://[\\w./]+\\w+");
@@ -55,9 +55,9 @@ public class JsonParser extends PublicationParser {
             }
 
             final JsonNode root = objectMapper.readTree(jsonParser);
-            docIterator = root.iterator();
+            pubIterator = root.iterator();
 
-            this.next = docIterator.hasNext();
+            this.next = pubIterator.hasNext();
 
         } catch (IOException e) {
             throw new IllegalStateException("Error reading JSON", e);
@@ -66,14 +66,14 @@ public class JsonParser extends PublicationParser {
 
     @Override
     protected Publication parse() {
-        if (!docIterator.hasNext()) {
+        if (!pubIterator.hasNext()) {
             this.next = false;
             return null;
         }
 
-        JsonNode node = docIterator.next();
+        JsonNode node = pubIterator.next();
 
-        this.next = docIterator.hasNext();
+        this.next = pubIterator.hasNext();
 
         int pubkey = node.hasNonNull(JSON_PUBKEY) ? node.get(JSON_PUBKEY).asInt() : 0;
         String title = node.hasNonNull(JSON_TITLE) ? node.get(JSON_TITLE).asText() : "";
@@ -97,6 +97,7 @@ public class JsonParser extends PublicationParser {
     }
 
     public static void main(String[] args) throws Exception {
+
         String jsonInput = "[" +
                 "  {" +
                 "    \"pubkey\": 123," +

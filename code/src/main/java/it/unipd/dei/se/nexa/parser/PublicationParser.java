@@ -1,5 +1,7 @@
 package it.unipd.dei.se.nexa.parser;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
@@ -39,7 +41,7 @@ public abstract class PublicationParser implements Iterator<Publication>, Iterab
     }
 
     @Override
-    public final Iterator<Publication> iterator() {
+    public final @NotNull Iterator<Publication> iterator() {
         return this;
     }
 
