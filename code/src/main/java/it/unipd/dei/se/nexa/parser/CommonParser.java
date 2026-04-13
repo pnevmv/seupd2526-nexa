@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 /**
  * Represents a document parser for Publications.
  */
-public abstract class PublicationParser implements Iterator<Publication>, Iterable<Publication> {
+public abstract class CommonParser implements Iterator<Publication>, Iterable<Publication> {
 
     /**
      * Indicates whether there is another Publication to return.
@@ -33,7 +33,7 @@ public abstract class PublicationParser implements Iterator<Publication>, Iterab
      * @param in the reader to the document(s) to be parsed.
      * @throws NullPointerException if {@code in} is {@code null}.
      */
-    protected PublicationParser(final Reader in) {
+    protected CommonParser(final Reader in) {
         if (in == null) {
             throw new NullPointerException(NULL_READER);
         }
@@ -77,7 +77,7 @@ public abstract class PublicationParser implements Iterator<Publication>, Iterab
      * @param in  the reader to the document(s) to be parsed.
      * @return a new instance of {@code PublicationParser} for the given class.
      */
-    public static PublicationParser create(Class<? extends PublicationParser> cls, Reader in) {
+    public static CommonParser create(Class<? extends CommonParser> cls, Reader in) {
         if (cls == null) {
             throw new NullPointerException("Document parser class cannot be null.");
         }

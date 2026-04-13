@@ -8,11 +8,10 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.*;
 import java.util.Iterator;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class JsonParser extends PublicationParser {
+public class JsonParser extends CommonParser {
 
     private static final String JSON_PUBKEY = "pubkey";
     private static final String JSON_TITLE = "title";
@@ -25,38 +24,22 @@ public class JsonParser extends PublicationParser {
 
     private static final Pattern HTML = Pattern.compile("<[^>]*>");
     private static final Pattern URL = Pattern.compile("https?://[\\w./]+\\w+");
-    private static final Pattern CITATION_SQUARE = Pattern.compile("\\[\\s*\\d+(?:(?:\\s*,\\s*|\\s*-\\s*|\\s*–\\s*)\\d+)*\\s*\\]");
-    private static final Pattern CITATION_AUTHORS = Pattern.compile("\\([A-Za-z\\s\\.,]+et al\\.?.*?\\)");
+    private static final Pattern CITATION_SQUARE = Pattern.compile("\\[\\s*\\d+(?:(?:\\s*,\\s*|\\s*-\\s*|\\s*–\\s*)\\d+)*\\s*]");
+    private static final Pattern CITATION_AUTHORS = Pattern.compile("\\([A-Za-z\\s.,]+et al\\.?.*?\\)");
     private static final Pattern SECTIONS = Pattern.compile("(?i)\\b(Abstract|Objective|Design|Setting|Participants|Results|Conclusions|Methods|Background)\\b\\s*:?");
     private static final Pattern EMOJI = Pattern.compile("[\\x{1F600}-\\x{1F64F}\\x{2700}-\\x{27BF}\\x{1F300}-\\x{1F5FF}\\x{1F680}-\\x{1F6FF}\\x{1F900}-\\x{1F9FF}\\x{2600}-\\x{26FF}]");
 
     public static String cleanText(String input) {
         if (input == null || input.isEmpty()) return input;
-
-        // 1. Decode HTML entities
         input = StringEscapeUtils.unescapeHtml4(input);
-
-        // 2. Remove HTML tags
         input = HTML.matcher(input).replaceAll(" ");
-
-        // 3. Remove URLs
         input = URL.matcher(input).replaceAll(" ");
-
-        // 4. Remove citations
         input = CITATION_SQUARE.matcher(input).replaceAll(" ");
         input = CITATION_AUTHORS.matcher(input).replaceAll(" ");
-
-        // 5. Remove sections
         input = SECTIONS.matcher(input).replaceAll(" ");
-
-        // 6. Symbols normalization
         input = input.replace('·', '.');
         input = input.replaceAll("[±≥°]", " ");
-
-        // 7. Emojis
         input = EMOJI.matcher(input).replaceAll(" ");
-
-        // 8. Spaces and newlines normalization
         input = input.replaceAll("\\s+", " ").trim();
 
         return input;
@@ -111,21 +94,25 @@ public class JsonParser extends PublicationParser {
         return new Publication(pubkey, title, abstractText.isEmpty() ? "#" : abstractText, venue, authors);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String jsonInput = "[" +
                 "  {" +
-                "    \"pubkey\": 123," +
-                "    \"title\": \"Esempio di Titolo\"," +
-                "    \"abstract\": \"Questo è un abstract con <p>tag HTML</p> e un link https://google.com\\n\\nEd entità come p &lt; 0.0001 e MPV &amp; 60 e spazio&nbsp;nbsp.\\nAbstract: Citazioni come [1, 2], [1-3] oppure (Feldstein et al., 2011). Poi simboli 0.72±0.12, p=0·009 e temp 37°C e emoji 🚨 🏥\"," +
-                "    \"venue\": \"Conferenza AI\"," +
-                "    \"authors\": \"Mario Rossi, Luigi Bianchi\"" +
+                "    \"pubkey\": 999," +
+                "    \"title\": \"Stress Test Evoluto\"," +
+                "    \"abstract\": \"Abstract: Benvenuti su https://nexa.dei.unipd.it! <p>Tag HTML rimosso.</p> " +
+                "Citazioni quadre [1, 2-5] e citazioni autore (Rossi et al., 2023). " +
+                "Entità HTML: p &lt; 0.05 &amp; spazio&nbsp;unito. " +
+                "Simboli: 37°C e 0.5±0.1. Sezioni: Methods: i risultati sono ottimi. " +
+                "Emoji finali: 🚀🔥🏥🧪\"," + // <-- nota: qui chiudiamo il JSON con \",
+                "    \"venue\": \"Journal of AI Stress Tests\"," +
+                "    \"authors\": \"A. Collaborator, B. Assistant\"" +
                 "  }" +
                 "]";
 
-        try (StringReader reader = new StringReader(jsonInput)) {
-            JsonParser p = new JsonParser(reader);
+        try (java.io.StringReader reader = new java.io.StringReader(jsonInput)) {
+            it.unipd.dei.se.nexa.parser.JsonParser p = new it.unipd.dei.se.nexa.parser.JsonParser(reader);
 
-            for (Publication d : p) {
+            for (it.unipd.dei.se.nexa.parser.Publication d : p) {
                 System.out.printf("%n%n------------------------------------%n%s%n%n%n", d.toString());
             }
         } catch (Exception e) {
