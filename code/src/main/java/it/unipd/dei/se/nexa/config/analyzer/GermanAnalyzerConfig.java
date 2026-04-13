@@ -1,7 +1,6 @@
 package it.unipd.dei.se.nexa.config.analyzer;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import it.unipd.dei.se.nexa.analyzer.CustomAnalyzer;
 import it.unipd.dei.se.nexa.config.filters.TokenFilterConfig;
 import it.unipd.dei.se.nexa.config.stemmer.StemFilterConfig;
 import it.unipd.dei.se.nexa.config.tokenizer.TokenizerConfig;
