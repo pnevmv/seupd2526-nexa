@@ -7,6 +7,7 @@ import it.unipd.dei.se.nexa.config.stemmer.StemFilterConfig;
 import it.unipd.dei.se.nexa.config.tokenizer.TokenizerConfig;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.custom.CustomAnalyzer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,8 @@ import java.util.List;
  * @param tokenizer the tokenizer configuration (e.g., standard tokenizer)
  * @param stemFilter English-specific stemming filter (e.g., english_minimal or porter)
  */
+
+/**
 public record EnglishAnalyzerConfig(
         @JsonDeserialize(as = ArrayList.class)
         List<TokenFilterConfig> tokenFilters,
@@ -44,3 +47,4 @@ public record EnglishAnalyzerConfig(
         return new CustomAnalyzer(tokenFilters, tokenizer, stemFilter);
     }
 }
+ */

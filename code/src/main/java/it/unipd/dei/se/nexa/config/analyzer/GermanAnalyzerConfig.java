@@ -8,7 +8,7 @@ import org.apache.lucene.analysis.Analyzer;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
 public record GermanAnalyzerConfig(
         @JsonDeserialize(as = ArrayList.class)
         List<TokenFilterConfig> tokenFilters,
@@ -20,4 +20,7 @@ public record GermanAnalyzerConfig(
     public Analyzer toRuntime() {
         return new CustomAnalyzer(tokenFilters, tokenizer, stemFilter);
     }
+
 }
+
+ */

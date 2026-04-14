@@ -2,8 +2,10 @@ package it.unipd.dei.se.nexa.parser;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.IntField; // Attenzione: In Lucene 9+ IntField è stato rimpiazzato da IntPoint o StoredField
+import org.apache.lucene.document.IntPoint;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
+import it.unipd.dei.se.nexa.index.BodyField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -58,9 +60,10 @@ public class Publication {
 
     public Document toLuceneDocument() {
         Document doc = new Document();
-        doc.add(new IntField("pubkey", pubkey, Field.Store.YES));
+        doc.add(new StoredField("pubkey", pubkey));
+        doc.add(new IntPoint("pubkey", pubkey));
         doc.add(new TextField("title", title, Field.Store.YES));
-        doc.add(new TextField("abstract", abstract_text, Field.Store.YES));
+        doc.add(new BodyField("abstract", abstract_text));
         doc.add(new TextField("venue", venue, Field.Store.NO));
         doc.add(new TextField("authors", authors, Field.Store.NO));
         return doc;

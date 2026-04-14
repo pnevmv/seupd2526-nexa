@@ -19,7 +19,6 @@ import org.apache.lucene.analysis.Analyzer;
  *   "stopwords": ["a", "the", "of"]
  * }
  * }</pre>
- */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = EnglishAnalyzerConfig.class, name = "english"),
@@ -30,3 +29,4 @@ public interface AnalyzerConfig {
     Analyzer toRuntime();
 }
 
+*/
