@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,15 +25,17 @@ public class ConfigManager {
     // Holds the configuration data for the specific instance
     private final Map<String, Object> config;
 
-    // Relative path to the configuration directory
-    private static final String CONFIG_DIR = "code/src/main/config/";
+    private static final Path[] CONFIG_DIR_CANDIDATES = {
+            Paths.get("src/main/config"),
+            Paths.get("code/src/main/config")
+    };
 
     /**
      * Private constructor to load a specific file from the config directory.
      */
     private ConfigManager(String fileName) {
         Yaml yaml = new Yaml();
-        File file = new File(CONFIG_DIR + fileName);
+        File file = resolveConfigFile(fileName).toFile();
 
         try (InputStream inputStream = new FileInputStream(file)) {
             this.config = yaml.load(inputStream);
@@ -98,5 +103,16 @@ public class ConfigManager {
      */
     public boolean hasKey(String key) {
         return config != null && config.containsKey(key);
+    }
+
+    private static Path resolveConfigFile(final String fileName) {
+        for (Path configDir : CONFIG_DIR_CANDIDATES) {
+            Path candidate = configDir.resolve(fileName);
+            if (Files.isReadable(candidate)) {
+                return candidate;
+            }
+        }
+
+        return CONFIG_DIR_CANDIDATES[0].resolve(fileName);
     }
 }
