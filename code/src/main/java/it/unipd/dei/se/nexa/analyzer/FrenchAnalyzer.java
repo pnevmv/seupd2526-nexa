@@ -257,7 +257,7 @@ public class FrenchAnalyzer extends Analyzer {
         filter = new LowerCaseFilter(source);
 
         if (Boolean.TRUE.equals(config.getBool("repeatedLetterFilter")))
-            filter = new repetedLetterFilter(filter);
+            filter = new RepeatedLetterFilter(filter);
 
         if (Boolean.TRUE.equals(config.getBool("expansionFilter")))
             filter = new AbbreviationExpansionFilter(filter, AnalyzerUtil.getAbbreviationMap("fr"));
