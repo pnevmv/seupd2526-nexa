@@ -14,8 +14,10 @@ import org.apache.lucene.analysis.core.LetterTokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
-import org.apache.lucene.analysis.fr.FrenchLightStemFilter;
-import org.apache.lucene.analysis.fr.FrenchMinimalStemFilter;
+import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
+import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
+import org.apache.lucene.analysis.en.KStemFilter;
+import org.apache.lucene.analysis.en.PorterStemFilter;
 import org.apache.lucene.analysis.icu.ICUFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.LengthFilter;
 import org.apache.lucene.analysis.miscellaneous.RemoveDuplicatesTokenFilter;
@@ -24,8 +26,7 @@ import org.apache.lucene.analysis.opennlp.OpenNLPTokenizer;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.analysis.util.ElisionFilter;
-import org.tartarus.snowball.ext.FrenchStemmer;
+import org.tartarus.snowball.ext.EnglishStemmer;
 
 import java.io.IOException;
 
@@ -37,16 +38,16 @@ import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadStopList;
 import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadTokenizerModel;
 
 /**
- * Lucene analyzer for French text.
+ * Lucene analyzer for English text.
  * <p>
- * The analyzer is configured through {@code config_fr.yaml} and supports
+ * The analyzer is configured through {@code config_en.yml} and supports
  * multiple tokenizers, optional normalization filters, stop lists, and
  * stemming or lemmatization strategies.
  */
-public class FrenchAnalyzer extends Analyzer {
+public class EnglishAnalyzer extends Analyzer {
 
-    private static final String LANGUAGE_CODE = "fr";
-    private static final String LANGUAGE_NAME = "French";
+    private static final String LANGUAGE_CODE = "en";
+    private static final String LANGUAGE_NAME = "English";
 
     /**
      * Upper bound for token length accepted by the analyzer configuration.
@@ -66,11 +67,12 @@ public class FrenchAnalyzer extends Analyzer {
     }
 
     /**
-     * Supported stemming / lemmatization strategies for French.
+     * Supported stemming / lemmatization strategies for English.
      */
     public enum StemFilterType {
-        FRENCHLIGHT,
-        FRENCHMINIMAL,
+        ENGLISHMINIMAL,
+        KSTEM,
+        PORTER,
         SNOWBALL,
         NLP,
         NONE
@@ -83,19 +85,19 @@ public class FrenchAnalyzer extends Analyzer {
     private final String stopListResourcePath;
 
     /**
-     * Creates a French analyzer with explicit parameters.
+     * Creates an English analyzer with explicit parameters.
      *
-     * @param tokenizerType        tokenizer type to use.
-     * @param minLength            minimum accepted token length.
-     * @param maxLength            maximum accepted token length.
+     * @param tokenizerType tokenizer type to use.
+     * @param minLength minimum accepted token length.
+     * @param maxLength maximum accepted token length.
      * @param stopListResourcePath classpath resource path of the stop list, or empty string if unused.
-     * @param stemFilterType       stemming or lemmatization strategy.
+     * @param stemFilterType stemming or lemmatization strategy.
      */
-    public FrenchAnalyzer(final TokenizerType tokenizerType,
-                          final int minLength,
-                          final int maxLength,
-                          final String stopListResourcePath,
-                          final StemFilterType stemFilterType) {
+    public EnglishAnalyzer(final TokenizerType tokenizerType,
+                           final int minLength,
+                           final int maxLength,
+                           final String stopListResourcePath,
+                           final StemFilterType stemFilterType) {
         super();
 
         if (tokenizerType == null) {
@@ -126,9 +128,9 @@ public class FrenchAnalyzer extends Analyzer {
     }
 
     /**
-     * Creates a French analyzer using the YAML configuration.
+     * Creates an English analyzer using the YAML configuration.
      */
-    public FrenchAnalyzer() {
+    public EnglishAnalyzer() {
         super();
 
         final String language = CONFIG.getString("language");
@@ -154,6 +156,7 @@ public class FrenchAnalyzer extends Analyzer {
         final Tokenizer source = createTokenizer(tokenizerType);
         TokenStream filter = source;
 
+        filter = new EnglishPossessiveFilter(filter);
         filter = new LowerCaseFilter(filter);
 
         if (Boolean.TRUE.equals(CONFIG.getBool("repeatedLetterFilter"))) {
@@ -166,7 +169,6 @@ public class FrenchAnalyzer extends Analyzer {
 
         filter = new NBSPFilter(filter);
         filter = new ICUFoldingFilter(filter);
-        filter = new ElisionFilter(filter, org.apache.lucene.analysis.fr.FrenchAnalyzer.DEFAULT_ARTICLES);
         filter = new RemoveDuplicatesTokenFilter(filter);
 
         if (Boolean.TRUE.equals(CONFIG.getBool("posOpnNLPFilter"))) {
@@ -213,9 +215,10 @@ public class FrenchAnalyzer extends Analyzer {
 
     private static TokenStream applyStemFilter(final TokenStream filter, final StemFilterType stemFilterType) {
         return switch (stemFilterType) {
-            case FRENCHMINIMAL -> new FrenchMinimalStemFilter(filter);
-            case FRENCHLIGHT -> new FrenchLightStemFilter(filter);
-            case SNOWBALL -> new SnowballFilter(filter, new FrenchStemmer());
+            case ENGLISHMINIMAL -> new EnglishMinimalStemFilter(filter);
+            case KSTEM -> new KStemFilter(filter);
+            case PORTER -> new PorterStemFilter(filter);
+            case SNOWBALL -> new SnowballFilter(filter, new EnglishStemmer());
             case NLP -> new OpenNLPLemmatizerFilter(filter, loadLemmatizerModel(CONFIG));
             case NONE -> filter;
         };
@@ -242,8 +245,9 @@ public class FrenchAnalyzer extends Analyzer {
         }
 
         return switch (stemFilterName) {
-            case "FrenchMinimal" -> StemFilterType.FRENCHMINIMAL;
-            case "FrenchLight" -> StemFilterType.FRENCHLIGHT;
+            case "EnglishMinimal" -> StemFilterType.ENGLISHMINIMAL;
+            case "KStem" -> StemFilterType.KSTEM;
+            case "Porter" -> StemFilterType.PORTER;
             case "SnowBall" -> StemFilterType.SNOWBALL;
             case "Nlp" -> StemFilterType.NLP;
             case "None" -> StemFilterType.NONE;
