@@ -3,7 +3,8 @@ package it.unipd.dei.se.nexa.analyzer;
 import java.io.IOException;
 import java.io.StringReader;
 
-import de.ir_lab.longeval25.analyzer.filters.*;
+import it.unipd.dei.se.nexa.analyzer.filters.*;
+import it.unipd.dei.se.nexa.utility.ConfigManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -27,11 +28,7 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.util.ElisionFilter;
 import org.tartarus.snowball.ext.FrenchStemmer;
 
-import static de.ir_lab.longeval25.analyzer.AnalyzerUtil.loadLemmatizerModel;
-import static de.ir_lab.longeval25.analyzer.AnalyzerUtil.loadPosTaggerModel;
-import static de.ir_lab.longeval25.analyzer.AnalyzerUtil.loadSentenceDetectorModel;
-import static de.ir_lab.longeval25.analyzer.AnalyzerUtil.loadTokenizerModel;
-import de.ir_lab.longeval25.utility.ConfigManager;
+import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.*;
 
 
 /**
@@ -140,7 +137,7 @@ public class FrenchAnalyzer extends Analyzer {
     /**
      * Configuration class
      */
-    private static final ConfigManager config = ConfigManager.getInstance();
+    private static final ConfigManager config = ConfigManager.getInstance("fr");
 
     /**
      * The constructor for our Analyzer. It takes several parameters as input
@@ -263,7 +260,7 @@ public class FrenchAnalyzer extends Analyzer {
             filter = new repetedLetterFilter(filter);
 
         if (Boolean.TRUE.equals(config.getBool("expansionFilter")))
-            filter = new AbbreviationExpansionFilter(filter, AnalyzerUtil.getAbbreviationMap());
+            filter = new AbbreviationExpansionFilter(filter, AnalyzerUtil.getAbbreviationMap("fr"));
 
         filter = new ICUFoldingFilter(filter);
         filter = new NBSPFilter(filter);

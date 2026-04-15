@@ -2,25 +2,25 @@
 
 # ------------------------------------------ PATHS ---------------------------------------------------------------------
 
-language: French
+language: German
 
 #path to the tokenizerModel
-tokenizerModel: code/src/main/java/resources/fr/openNLPmodels/fr-token.bin
+tokenizerModel: code/java/src/main/resources/openNLPmodels/fr-token.bin
 
 #path to the sentenceModel
-sentenceModel: code/src/main/java/resources/fr/openNLPmodels/fr-sent.bin
+sentenceModel: code/java/src/main/resources/openNLPmodels/fr-sent.bin
 
 #path to the posModel
-posModel: code/src/main/java/resources/fr/openNLPmodels/fr-pos.bin
+posModel: code/java/src/main/resources/openNLPmodels/fr-pos.bin
 
 #path to the lemmatizerModel
-lemmatizerModel: code/src/main/java/resources/fr/openNLPmodels/fr-lemmatizer.bin
+lemmatizerModel: code/java/src/main/resources/openNLPmodels/fr-lemmatizer.bin
 
 #path to the synonyms file
-synonymsFile: code/src/main/java/resources/synonyms/synonyms.txt
+synonymsFile: code/java/src/main/resources/synonyms/synonyms.txt
 
 #path to the language detector model
-languageDetectorModel: code/src/main/java/resources/fr/openNLPmodels/langdetect-183.bin
+languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 
@@ -31,25 +31,25 @@ minLength: 2
 maxLength: 36
 
 #use the Ngrams filter: select true if you want to use it, false otherwise
-nGramsFilter: true
+nGramsFilter: false
 
 #length of nGram (for words): select the number of shingles
 shingleSize: 3
 
 #use the PositionFilter: select true if you want to use it, false otherwise
-positionFilter: true
+positionFilter: false
 
 #increment of position to ensure they are consecutive, DO NOT CHANGE (CHECK IF IS IT 1)
 positionIncrement: 1
 
 #use the expansionFilter: select true if you want to use it, false otherwise
-expansionFilter: true
+expansionFilter: false
 
 #use the POSFilter from openNLP: select true if you want to use it, false otherwise
-posOpnNLPFilter: true
+posOpnNLPFilter: false
 
 #use repeatedLetterFilter: select true if you want to use it, false otherwise
-repeatedLetterFilter: true
+repeatedLetterFilter: false
 
 #type of tokenizer to use: select one from [Whitespace, Standard, Letter, Nlp]
 tokenizerType: Letter
@@ -59,4 +59,5 @@ tokenizerType: Letter
 customStopList:
 
 #type of stemmer to use for French: select on from [FrenchMinimal, FrenchLight, SnowBall, Nlp, None]
-stemFilter: FrenchMinimal
+stemFilter: None
+

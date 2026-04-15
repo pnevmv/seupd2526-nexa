@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.apache.lucene.analysis.Analyzer;
 
 /**
+ * Checking the approach
  * Interface for analyzer configuration objects that define how Lucene analyzers are constructed.
  *
  * <p>This interface is used to support polymorphic deserialization from configuration files using Jackson.
@@ -19,7 +20,6 @@ import org.apache.lucene.analysis.Analyzer;
  *   "stopwords": ["a", "the", "of"]
  * }
  * }</pre>
- */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = EnglishAnalyzerConfig.class, name = "english"),
@@ -30,3 +30,4 @@ public interface AnalyzerConfig {
     Analyzer toRuntime();
 }
 
+*/
