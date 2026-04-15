@@ -300,36 +300,4 @@ public class FrenchAnalyzer extends Analyzer {
         }
         return new TokenStreamComponents(source, filter);
     }
-
-    /**
-     * it.unipd.dei.se.Main method of the class. This is done mainly for testing purposes.
-     *
-     * @param args command line arguments.
-     * @throws IOException if something goes wrong while processing the text.
-     */
-    public static void main(String[] args) throws IOException {
-
-        final String text = "101boyvideos.com - Et 50 autres sites similaires Ã ";
-
-
-        //------------ LUCENE TOKENIZER----------------
-        FrenchAnalyzer analyzer = new FrenchAnalyzer();
-
-        try (TokenStream stream = analyzer.tokenStream("field", new StringReader(text))) {
-            // Reset the stream before starting
-            stream.reset();
-
-            final CharTermAttribute tokenTerm = stream.addAttribute(CharTermAttribute.class);
-            final PositionIncrementAttribute posAttr = stream.addAttribute(PositionIncrementAttribute.class);
-
-
-            int position = 0;
-            // Print all tokens and their respective positions until the stream is exhausted
-            while (stream.incrementToken()) {
-                position += posAttr.getPositionIncrement();
-                System.out.printf("+ token: %-20s | Position: %d%n", tokenTerm.toString(), position);
-            }
-        }
-
-    }
 }
