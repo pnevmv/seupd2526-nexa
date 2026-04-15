@@ -5,22 +5,22 @@
 language: French
 
 #path to the tokenizerModel
-tokenizerModel: code/src/main/java/resources/fr/openNLPmodels/fr-token.bin
+tokenizerModel: fr/openNLPmodels/fr-token.bin
 
 #path to the sentenceModel
-sentenceModel: code/src/main/java/resources/fr/openNLPmodels/fr-sent.bin
+sentenceModel: fr/openNLPmodels/fr-sent.bin
 
 #path to the posModel
-posModel: code/src/main/java/resources/fr/openNLPmodels/fr-pos.bin
+posModel: fr/openNLPmodels/fr-pos.bin
 
 #path to the lemmatizerModel
-lemmatizerModel: code/src/main/java/resources/fr/openNLPmodels/fr-lemmatizer.bin
+lemmatizerModel: fr/openNLPmodels/fr-lemmatizer.bin
 
 #path to the synonyms file
-synonymsFile: code/src/main/java/resources/synonyms/synonyms.txt
+synonymsFile: fr/synonyms/synonyms.txt
 
 #path to the language detector model
-languageDetectorModel: code/src/main/java/resources/fr/openNLPmodels/langdetect-183.bin
+languageDetectorModel: fr/openNLPmodels/langdetect-183.bin
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 

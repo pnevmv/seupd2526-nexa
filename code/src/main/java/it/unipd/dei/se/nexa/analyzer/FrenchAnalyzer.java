@@ -247,7 +247,7 @@ public class FrenchAnalyzer extends Analyzer {
             case NLP -> {
                 try {
                     yield new OpenNLPTokenizer(TokenStream.DEFAULT_TOKEN_ATTRIBUTE_FACTORY,
-                            loadSentenceDetectorModel(), loadTokenizerModel());
+                            loadSentenceDetectorModel(config), loadTokenizerModel(config));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -268,7 +268,7 @@ public class FrenchAnalyzer extends Analyzer {
         filter = new RemoveDuplicatesTokenFilter(filter);
 
         if (Boolean.TRUE.equals(config.getBool("posOpnNLPFilter")))
-            filter = new CompoundPOSTokenFilter(filter, loadPosTaggerModel());
+            filter = new CompoundPOSTokenFilter(filter, loadPosTaggerModel(config));
 
         if (Boolean.TRUE.equals(config.getBool("nGramsFilter")))
             filter = new ShingleFilter(filter, config.getInt("shingleSize"));
@@ -293,7 +293,7 @@ public class FrenchAnalyzer extends Analyzer {
                 filter = new SnowballFilter(filter, new FrenchStemmer());
                 break;
             case NLP:
-                filter = new OpenNLPLemmatizerFilter(filter, loadLemmatizerModel());
+                filter = new OpenNLPLemmatizerFilter(filter, loadLemmatizerModel(config));
                 break;
             case NONE:
                 break;

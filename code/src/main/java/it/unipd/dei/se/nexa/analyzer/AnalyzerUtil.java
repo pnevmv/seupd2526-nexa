@@ -1,12 +1,11 @@
 package it.unipd.dei.se.nexa.analyzer;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,204 +23,111 @@ import opennlp.tools.sentdetect.SentenceModel;
 import opennlp.tools.tokenize.TokenizerModel;
 
 /**
- * The AnalyzerUtil class provides utility methods for analyzing text data.
- * It includes functionality for loading stop lists, which are collections.
+ * Utility methods for analyzers.
  */
-public class AnalyzerUtil {
+public final class AnalyzerUtil {
 
-    private static final ConfigManager config = ConfigManager.getInstance("fr");
-
-    private AnalyzerUtil() {}
+    private AnalyzerUtil() {
+    }
 
     /**
      * Loads a stop list from a file and returns it as a CharArraySet.
      *
-     * @param stopList The file path of the stop list.
-     * @return A CharArraySet containing the stop words loaded from the file.
-     * @throws IllegalArgumentException if the stop list file path is empty.
-     * @throws IllegalStateException    if an error occurs while loading the stop
-     *                                  list file.
+     * @param stopList the file path of the stop list.
+     * @return a CharArraySet containing the stop words loaded from the file.
      */
     public static CharArraySet loadStopList(@NotNull final String stopList) {
-        if (stopList.isEmpty())
-            throw new IllegalArgumentException("stopList cant be empty");
-        CharArraySet stopWordsList;
-        try {
-            Reader in = new BufferedReader(new FileReader(stopList));
-            stopWordsList = WordlistLoader.getWordSet(in);
-            in.close();
+        try (InputStream in = openResource(stopList);
+             Reader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            return WordlistLoader.getWordSet(reader);
         } catch (IOException e) {
             throw new IllegalStateException(
                     String.format("Unable to load the stop list %s: %s", stopList, e.getMessage()), e);
         }
-        return stopWordsList;
     }
 
-    /**
-     * Loads the required Apache OpenNLP tokenizer model among those available in
-     * the {@code resources} folder.
-     *
-     * @return the required Apache OpenNLP model.
-     * @throws IllegalStateException if there is any issue while loading the model.
-     */
-    static NLPTokenizerOp loadTokenizerModel() {
 
+    private static InputStream openResource(String resourcePath) {
+        if (resourcePath == null) {
+            throw new NullPointerException("Resource path cannot be null.");
+        }
+        if (resourcePath.isEmpty()) {
+            throw new IllegalArgumentException("Resource path cannot be empty.");
+        }
+
+        InputStream in = AnalyzerUtil.class.getClassLoader().getResourceAsStream(resourcePath);
+        if (in == null) {
+            throw new IllegalStateException("Resource not found: " + resourcePath);
+        }
+
+        return in;
+    }
+
+    static NLPTokenizerOp loadTokenizerModel(@NotNull final ConfigManager config) {
         String modelFile = config.getString("tokenizerModel");
 
-        if (modelFile == null)
-            throw new NullPointerException("Model file name cannot be null.");
-
-        if (modelFile.isEmpty())
-            throw new IllegalArgumentException("Model file name cannot be empty.");
-
-        NLPTokenizerOp model;
-
-        try {
-
-            // Get an input stream for the file containing the model
-            InputStream in = Files.newInputStream(Paths.get(modelFile));
-            // Load the model
-            model = new NLPTokenizerOp(new TokenizerModel(in));
-            // Close the file
-            in.close();
-
+        try (InputStream in = openResource(modelFile)) {
+            return new NLPTokenizerOp(new TokenizerModel(in));
         } catch (IOException e) {
-            throw new IllegalStateException(String.format("Unable to load the model %s: %s", modelFile, e.getMessage()),
-                    e);
+            throw new IllegalStateException(
+                    String.format("Unable to load tokenizer model %s: %s", modelFile, e.getMessage()), e);
         }
-
-        return model;
     }
 
-    /**
-     * Loads the required Apache OpenNLP sentence detector model among those
-     * available in the {@code resources} folder.
-     *
-     * @return the required Apache OpenNLP model.
-     * @throws IllegalStateException if there is any issue while loading the model.
-     */
-    static NLPSentenceDetectorOp loadSentenceDetectorModel() {
-
+    static NLPSentenceDetectorOp loadSentenceDetectorModel(@NotNull final ConfigManager config) {
         String modelFile = config.getString("sentenceModel");
 
-        if (modelFile == null)
-            throw new NullPointerException("Model file name cannot be null.");
-
-        if (modelFile.isEmpty())
-            throw new IllegalArgumentException("Model file name cannot be empty.");
-
-        NLPSentenceDetectorOp model;
-
-        try {
-
-            // Get an input stream for the file containing the model
-            InputStream in = Files.newInputStream(Paths.get(modelFile));
-            // Load the model
-            model = new NLPSentenceDetectorOp(new SentenceModel(in));
-            // Close the file
-            in.close();
-
+        try (InputStream in = openResource(modelFile)) {
+            return new NLPSentenceDetectorOp(new SentenceModel(in));
         } catch (IOException e) {
-            throw new IllegalStateException(String.format("Unable to load the model %s: %s", modelFile, e.getMessage()),
-                    e);
+            throw new IllegalStateException(
+                    String.format("Unable to load sentence model %s: %s", modelFile, e.getMessage()), e);
         }
-
-        return model;
     }
 
-    /**
-     * Loads the required Apache OpenNLP POS tagger model among those available in
-     * the {@code resources} folder.
-     *
-     * @return the required Apache OpenNLP model.
-     * @throws IllegalStateException if there is any issue while loading the model.
-     */
-    static POSModel loadPosTaggerModel() {
-
+    static POSModel loadPosTaggerModel(@NotNull final ConfigManager config) {
         String modelFile = config.getString("posModel");
 
-        if (modelFile == null)
-            throw new NullPointerException("Model file name cannot be null.");
-
-        if (modelFile.isEmpty())
-            throw new IllegalArgumentException("Model file name cannot be empty.");
-
-        POSModel model;
-
-        try {
-
-            // Get an input stream for the file containing the model
-            InputStream in = Files.newInputStream(Paths.get(modelFile));
-            // Load the model
-            model = new POSModel(in);
-            // Close the file
-            in.close();
-
+        try (InputStream in = openResource(modelFile)) {
+            return new POSModel(in);
         } catch (IOException e) {
-            throw new IllegalStateException(String.format("Unable to load the model %s: %s", modelFile, e.getMessage()),
-                    e);
+            throw new IllegalStateException(
+                    String.format("Unable to load POS model %s: %s", modelFile, e.getMessage()), e);
         }
-
-        return model;
     }
 
-    /**
-     * Loads the required Apache OpenNLP lemmatizer model among those available in
-     * the {@code resources} folder.
-     *
-     * @return the required Apache OpenNLP model.
-     * @throws IllegalStateException if there is any issue while loading the model.
-     */
-    static NLPLemmatizerOp loadLemmatizerModel() {
-
+    static NLPLemmatizerOp loadLemmatizerModel(@NotNull final ConfigManager config) {
         String modelFile = config.getString("lemmatizerModel");
 
-        if (modelFile == null)
-            throw new NullPointerException("Model file name cannot be null.");
-
-        if (modelFile.isEmpty())
-            throw new IllegalArgumentException("Model file name cannot be empty.");
-
-        NLPLemmatizerOp model;
-
-        try {
-
-            // Get an input stream for the file containing the model
-            InputStream in = Files.newInputStream(Paths.get(modelFile));
-            // Load the model
-            model = new NLPLemmatizerOp(null, new LemmatizerModel(in));
-            // Close the file
-            in.close();
-
+        try (InputStream in = openResource(modelFile)) {
+            return new NLPLemmatizerOp(null, new LemmatizerModel(in));
         } catch (IOException e) {
-            throw new IllegalStateException(String.format("Unable to load the model %s: %s", modelFile, e.getMessage()),
-                    e);
+            throw new IllegalStateException(
+                    String.format("Unable to load lemmatizer model %s: %s", modelFile, e.getMessage()), e);
         }
-
-        return model;
     }
 
-    public static Map<String, String> getAbbreviationMap(String language) {
+    public static Map<String, String> getAbbreviationMap(@NotNull final String language) {
         Map<String, String> abbreviationMap = new HashMap<>();
-        String filePath = "code/src/main/java/resources/".concat(language).concat("/expandWords.csv");
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+        String resourcePath = language + "/expandWords.csv";
+
+        try (InputStream in = openResource(resourcePath);
+             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+
             String line;
             while ((line = br.readLine()) != null) {
-
-                if (line.isEmpty() || line.startsWith("#"))
+                if (line.isEmpty() || line.startsWith("#")) {
                     continue;
+                }
 
-                String[] parts = line.split(",");
-
+                String[] parts = line.split(",", 2);
                 if (parts.length == 2) {
-                    String abbreviation = parts[0].trim();
-                    String expansion = parts[1].trim();
-
-                    abbreviationMap.put(abbreviation, expansion);
+                    abbreviationMap.put(parts[0].trim(), parts[1].trim());
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException(
+                    String.format("Unable to load abbreviation map for language %s: %s", language, e.getMessage()), e);
         }
 
         return abbreviationMap;
