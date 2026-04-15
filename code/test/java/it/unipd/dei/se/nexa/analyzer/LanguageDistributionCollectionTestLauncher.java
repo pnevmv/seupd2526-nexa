@@ -2,6 +2,7 @@ package it.unipd.dei.se.nexa.analyzer;
 
 import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
+import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;

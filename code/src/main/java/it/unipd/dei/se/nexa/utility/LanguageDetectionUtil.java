@@ -1,7 +1,7 @@
-package it.unipd.dei.se.nexa.analyzer;
+package it.unipd.dei.se.nexa.utility;
 
+import it.unipd.dei.se.nexa.analyzer.AnalyzerUtil;
 import it.unipd.dei.se.nexa.parser.Publication;
-import it.unipd.dei.se.nexa.utility.ConfigManager;
 import opennlp.tools.langdetect.Language;
 import opennlp.tools.langdetect.LanguageDetectorME;
 import opennlp.tools.langdetect.LanguageDetectorModel;

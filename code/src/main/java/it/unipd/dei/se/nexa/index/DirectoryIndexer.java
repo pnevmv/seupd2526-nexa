@@ -3,7 +3,7 @@ package it.unipd.dei.se.nexa.index;
 import it.unipd.dei.se.nexa.analyzer.EnglishAnalyzer;
 import it.unipd.dei.se.nexa.analyzer.FrenchAnalyzer;
 import it.unipd.dei.se.nexa.analyzer.GermanAnalyzer;
-import it.unipd.dei.se.nexa.analyzer.LanguageDetectionUtil;
+import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
 
