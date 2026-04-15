@@ -6,6 +6,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
+import java.text.Normalizer;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
@@ -13,6 +14,9 @@ public abstract class CommonParser implements Iterator<Publication>, Iterable<Pu
 
     protected static final Pattern HTML = Pattern.compile("<[^>]*>");
     protected static final Pattern URL = Pattern.compile("https?://\\S+");
+    protected static final Pattern TWITTER_MENTION = Pattern.compile("@\\w+");
+    protected static final Pattern CITATION_AUTHORS = Pattern.compile("\\([A-Za-z\\s.,]+et al\\.?.*?\\)");
+    protected static final Pattern SECTIONS = Pattern.compile("(?i)\\b(Abstract|Objective|Design|Setting|Participants|Results|Conclusions|Methods|Background)\\b\\s*:?");
     protected static final Pattern CITATION_SQUARE =
             Pattern.compile("\\[\\s*\\d+(?:(?:\\s*,\\s*|\\s*-\\s*|\\s*–\\s*)\\d+)*\\s*]");
     protected static final Pattern CITATION_ET_AL =
@@ -58,9 +62,19 @@ public abstract class CommonParser implements Iterator<Publication>, Iterable<Pu
             return input;
         }
 
+
+        if (input == null || input.isEmpty()) return input;
+        input = Normalizer.normalize(input, Normalizer.Form.NFC);
+        input = StringEscapeUtils.unescapeHtml4(input);
+        input = HTML.matcher(input).replaceAll(" ");
+        input = URL.matcher(input).replaceAll(" ");
         input = CITATION_SQUARE.matcher(input).replaceAll(" ");
-        input = CITATION_ET_AL.matcher(input).replaceAll(" ");
-        input = EN_SECTION_HEADERS.matcher(input).replaceAll("");
+        input = CITATION_AUTHORS.matcher(input).replaceAll(" ");
+        input = SECTIONS.matcher(input).replaceAll(" ");
+        input = input.replace('·', '.');
+        input = input.replaceAll("[±≥°]", " ");
+        input = EMOJI.matcher(input).replaceAll(" ");
+        input = TWITTER_MENTION.matcher(input).replaceAll(" ");
         input = input.replaceAll("\\s+", " ").trim();
 
         return input;

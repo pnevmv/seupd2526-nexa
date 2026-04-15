@@ -21,7 +21,7 @@ public class LanguageDistributionCollectionTestLauncher {
             Path.of("datasets/collection_data.json")
     };
 
-    private static final int PREVIEW_PER_LANGUAGE = 10;
+    private static final int PREVIEW_PER_LANGUAGE = 50;
 
     public static void main(String[] args) {
         final Path collectionPath = resolveCollectionPath();
