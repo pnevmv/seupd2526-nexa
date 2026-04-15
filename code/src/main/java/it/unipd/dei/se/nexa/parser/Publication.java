@@ -4,6 +4,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import it.unipd.dei.se.nexa.index.BodyField;
 
@@ -15,6 +16,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Publication {
+
+    public static final String FIELD_PUBKEY = "pubkey";
+    public static final String FIELD_LANGUAGE = "language";
+    public static final String FIELD_TITLE = "title";
+    public static final String FIELD_ABSTRACT = "abstract";
+    public static final String FIELD_VENUE = "venue";
+    public static final String FIELD_AUTHORS = "authors";
+
+    private static final String UNKNOWN_LANGUAGE = "unknown";
 
     @JsonProperty("pubkey")
     private int pubkey;
@@ -59,13 +69,41 @@ public class Publication {
     public String getAuthors() { return authors; }
 
     public Document toLuceneDocument() {
+        return toLuceneDocument(UNKNOWN_LANGUAGE);
+    }
+
+    public Document toLuceneDocument(final String languageCode) {
+        final String normalizedLanguage = normalizeLanguageCode(languageCode);
+        final String safeTitle = safeString(title);
+        final String safeAbstract = safeString(abstract_text);
+        final String safeVenue = safeString(venue);
+        final String safeAuthors = safeString(authors);
+
         Document doc = new Document();
-        doc.add(new StoredField("pubkey", pubkey));
-        doc.add(new IntPoint("pubkey", pubkey));
-        doc.add(new TextField("title", title, Field.Store.YES));
-        doc.add(new BodyField("abstract", abstract_text));
-        doc.add(new TextField("venue", venue, Field.Store.NO));
-        doc.add(new TextField("authors", authors, Field.Store.NO));
+        doc.add(new StoredField(FIELD_PUBKEY, pubkey));
+        doc.add(new IntPoint(FIELD_PUBKEY, pubkey));
+        doc.add(new StringField(FIELD_LANGUAGE, normalizedLanguage, Field.Store.YES));
+        doc.add(new StoredField(FIELD_TITLE, safeTitle));
+        doc.add(new TextField(getLocalizedFieldName(FIELD_TITLE, normalizedLanguage), safeTitle, Field.Store.NO));
+        doc.add(new BodyField(getLocalizedFieldName(FIELD_ABSTRACT, normalizedLanguage), safeAbstract));
+        doc.add(new TextField(FIELD_VENUE, safeVenue, Field.Store.NO));
+        doc.add(new TextField(FIELD_AUTHORS, safeAuthors, Field.Store.NO));
         return doc;
+    }
+
+    public static String getLocalizedFieldName(final String baseFieldName, final String languageCode) {
+        return baseFieldName + "_" + normalizeLanguageCode(languageCode);
+    }
+
+    private static String normalizeLanguageCode(final String languageCode) {
+        if (languageCode == null || languageCode.isBlank()) {
+            return UNKNOWN_LANGUAGE;
+        }
+
+        return languageCode.toLowerCase();
+    }
+
+    private static String safeString(final String value) {
+        return value == null ? "" : value;
     }
 }

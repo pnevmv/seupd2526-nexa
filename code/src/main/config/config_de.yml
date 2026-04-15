@@ -20,7 +20,7 @@ lemmatizerModel: de/openNLPmodels/de-lemmatizer.bin
 synonymsFile: de/synonyms/synonyms.txt
 
 #path to the language detector model
-languageDetectorModel: de/openNLPmodels/langdetect-183.bin
+languageDetectorModel: langdetect-183.bin
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 

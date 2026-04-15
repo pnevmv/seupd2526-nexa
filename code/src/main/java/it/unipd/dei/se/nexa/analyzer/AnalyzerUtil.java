@@ -1,6 +1,7 @@
 package it.unipd.dei.se.nexa.analyzer;
 
 import it.unipd.dei.se.nexa.utility.ConfigManager;
+import opennlp.tools.langdetect.LanguageDetectorModel;
 import opennlp.tools.lemmatizer.LemmatizerModel;
 import opennlp.tools.postag.POSModel;
 import opennlp.tools.sentdetect.SentenceModel;
@@ -117,6 +118,24 @@ public final class AnalyzerUtil {
         } catch (IOException e) {
             throw new IllegalStateException(
                     String.format("Unable to load lemmatizer model %s: %s", modelResourcePath, e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Loads the OpenNLP language detector model defined in the provided configuration.
+     *
+     * @param config language detector configuration.
+     * @return the language detector.
+     */
+    public static LanguageDetectorModel loadLanguageDetectorModel(@NotNull final ConfigManager config) {
+        final String modelResourcePath = requireConfigValue(config, "languageDetectorModel");
+
+        try (InputStream in = openResource(modelResourcePath)) {
+            return new LanguageDetectorModel(in);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    String.format("Unable to load language detector model %s: %s",
+                            modelResourcePath, e.getMessage()), e);
         }
     }
 
