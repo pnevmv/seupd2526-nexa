@@ -56,7 +56,7 @@ tokenizerType: Nlp
 
 #customized stop list
 #set the stop list path if it should be used, otherwise leave empty
-customStopList:
+customStopList: en/stoplists/BstoplistEN.txt
 
 #type of stemmer to use for English: select one from [EnglishMinimal, KStem, Porter, SnowBall, Nlp, None]
 stemFilter: Nlp

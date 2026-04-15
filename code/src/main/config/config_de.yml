@@ -56,7 +56,7 @@ tokenizerType: Nlp
 
 #customized stop list
 #set the stop list path if it should be used, otherwise leave empty
-customStopList:
+customStopList: de/stoplists/BstoplistDE.txt
 
 #type of stemmer to use for German: select one from [GermanMinimal, GermanLight, German, SnowBall, Nlp, None]
 stemFilter: Nlp
