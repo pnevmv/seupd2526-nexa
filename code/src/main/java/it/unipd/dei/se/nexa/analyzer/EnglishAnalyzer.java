@@ -208,6 +208,27 @@ public class EnglishAnalyzer extends Analyzer {
 
         return new TokenStreamComponents(source, filter);
     }
+
+    /**
+     * Main method of the class for testing purposes.
+     */
+    public static void main(String[] args) throws IOException {
+        final String text = "The researcher's methodology for COVID-19 analysis is quite innovative.";
+        EnglishAnalyzer analyzer = new EnglishAnalyzer();
+
+        try (TokenStream stream = analyzer.tokenStream("field", new StringReader(text))) {
+            stream.reset();
+            final CharTermAttribute tokenTerm = stream.addAttribute(CharTermAttribute.class);
+            final PositionIncrementAttribute posAttr = stream.addAttribute(PositionIncrementAttribute.class);
+
+            int position = 0;
+            while (stream.incrementToken()) {
+                position += posAttr.getPositionIncrement();
+                System.out.printf("+ token: %-20s | Position: %d%n", tokenTerm.toString(), position);
+            }
+        }
+    }
+}
 }
 
 
