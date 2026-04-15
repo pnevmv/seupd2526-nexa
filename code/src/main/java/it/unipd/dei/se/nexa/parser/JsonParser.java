@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class JsonParser extends CommonParser {
@@ -20,33 +19,28 @@ public class JsonParser extends CommonParser {
     private static final String JSON_AUTHORS = "authors";
 
     private final com.fasterxml.jackson.core.JsonParser jsonParser;
-    private final Iterator<JsonNode> docIterator;
+    private final ObjectMapper objectMapper;
 
     public JsonParser(Reader in) {
         super(new BufferedReader(in));
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonFactory factory = new JsonFactory();
+        this.objectMapper = new ObjectMapper();
 
         try {
-            jsonParser = factory.createParser(this.in);
+            JsonFactory factory = new JsonFactory();
+            this.jsonParser = factory.createParser(this.in);
 
-            if (jsonParser.currentToken() == null) {
-                jsonParser.nextToken();
-            }
-
-            if (jsonParser.currentToken() != JsonToken.START_ARRAY) {
+            JsonToken firstToken = this.jsonParser.nextToken();
+            if (firstToken != JsonToken.START_ARRAY) {
                 throw new IllegalStateException("Error in JSON format: expected start array.");
             }
 
-            JsonNode root = objectMapper.readTree(jsonParser);
+            JsonToken nextToken = this.jsonParser.nextToken();
+            this.hasNextPublication = nextToken == JsonToken.START_OBJECT;
 
-            if (root == null || !root.isArray()) {
-                throw new IllegalStateException("Error in JSON format: root element must be an array.");
+            if (nextToken != null && nextToken != JsonToken.START_OBJECT && nextToken != JsonToken.END_ARRAY) {
+                throw new IllegalStateException("Error in JSON format: expected JSON object inside array.");
             }
-
-            docIterator = root.iterator();
-            this.hasNextPublication = docIterator.hasNext();
 
         } catch (IOException e) {
             throw new IllegalStateException("Error reading JSON.", e);
@@ -55,28 +49,38 @@ public class JsonParser extends CommonParser {
 
     @Override
     protected Publication parse() {
-        if (!docIterator.hasNext()) {
-            this.hasNextPublication = false;
+        if (!hasNextPublication) {
             throw new NoSuchElementException("No more JSON documents to parse.");
         }
 
-        JsonNode node = docIterator.next();
-        this.hasNextPublication = docIterator.hasNext();
+        try {
+            JsonNode node = objectMapper.readTree(jsonParser);
 
-        int pubkey = node.hasNonNull(JSON_PUBKEY) ? node.get(JSON_PUBKEY).asInt() : 0;
-        String title = node.hasNonNull(JSON_TITLE) ? node.get(JSON_TITLE).asText() : "";
-        String abstractText = node.hasNonNull(JSON_ABSTRACT) ? node.get(JSON_ABSTRACT).asText() : "";
-        String venue = node.hasNonNull(JSON_VENUE) ? node.get(JSON_VENUE).asText() : "";
-        String authors = node.hasNonNull(JSON_AUTHORS) ? node.get(JSON_AUTHORS).asText() : "";
+            JsonToken nextToken = jsonParser.nextToken();
+            hasNextPublication = nextToken == JsonToken.START_OBJECT;
 
-        abstractText = cleanScientificText(abstractText);
+            if (nextToken != null && nextToken != JsonToken.START_OBJECT && nextToken != JsonToken.END_ARRAY) {
+                throw new IllegalStateException("Error in JSON format: expected JSON object or end of array.");
+            }
 
-        return new Publication(
-                pubkey,
-                title,
-                abstractText.isEmpty() ? "#" : abstractText,
-                venue,
-                authors
-        );
+            int pubkey = node.hasNonNull(JSON_PUBKEY) ? node.get(JSON_PUBKEY).asInt() : 0;
+            String title = node.hasNonNull(JSON_TITLE) ? node.get(JSON_TITLE).asText() : "";
+            String abstractText = node.hasNonNull(JSON_ABSTRACT) ? node.get(JSON_ABSTRACT).asText() : "";
+            String venue = node.hasNonNull(JSON_VENUE) ? node.get(JSON_VENUE).asText() : "";
+            String authors = node.hasNonNull(JSON_AUTHORS) ? node.get(JSON_AUTHORS).asText() : "";
+
+            abstractText = cleanScientificText(abstractText);
+
+            return new Publication(
+                    pubkey,
+                    title,
+                    abstractText.isEmpty() ? "#" : abstractText,
+                    venue,
+                    authors
+            );
+
+        } catch (IOException e) {
+            throw new IllegalStateException("Error parsing next JSON publication.", e);
+        }
     }
 }
