@@ -56,7 +56,7 @@ tokenizerType: Letter
 
 #customized stop list
 #set the stop list path if it should be used, otherwise leave empty
-customStopList:
+customStopList: fr/stoplists/BstoplistFR.txt
 
 #type of stemmer to use for French: select on from [FrenchMinimal, FrenchLight, SnowBall, Nlp, None]
 stemFilter: FrenchMinimal

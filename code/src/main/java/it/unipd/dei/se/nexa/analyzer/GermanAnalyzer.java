@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.FlattenGraphFilter;
 import org.apache.lucene.analysis.core.LetterTokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopFilter;
@@ -26,6 +27,8 @@ import org.apache.lucene.analysis.opennlp.OpenNLPTokenizer;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
+import org.apache.lucene.analysis.synonym.SynonymMap;
 import org.tartarus.snowball.ext.GermanStemmer;
 
 import java.io.IOException;
@@ -35,6 +38,7 @@ import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadLemmatizerModel;
 import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadPosTaggerModel;
 import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadSentenceDetectorModel;
 import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadStopList;
+import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadSynonymMap;
 import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.loadTokenizerModel;
 
 /**
@@ -83,6 +87,7 @@ public class GermanAnalyzer extends Analyzer {
     private final int minLength;
     private final int maxLength;
     private final String stopListResourcePath;
+    private final SynonymMap synonymMap;
 
     /**
      * Creates a German analyzer with explicit parameters.
@@ -125,6 +130,7 @@ public class GermanAnalyzer extends Analyzer {
         this.maxLength = maxLength;
         this.stopListResourcePath = stopListResourcePath;
         this.stemFilterType = stemFilterType;
+        this.synonymMap = loadSynonymMap(CONFIG, GermanAnalyzer::createSynonymNormalizationAnalyzer);
     }
 
     /**
@@ -149,6 +155,7 @@ public class GermanAnalyzer extends Analyzer {
 
         this.tokenizerType = parseTokenizerType(CONFIG.getString("tokenizerType"));
         this.stemFilterType = parseStemFilterType(CONFIG.getString("stemFilter"));
+        this.synonymMap = loadSynonymMap(CONFIG, GermanAnalyzer::createSynonymNormalizationAnalyzer);
     }
 
     @Override
@@ -169,6 +176,12 @@ public class GermanAnalyzer extends Analyzer {
         filter = new NBSPFilter(filter);
         filter = new GermanNormalizationFilter(filter);
         filter = new ICUFoldingFilter(filter);
+
+        if (synonymMap != null) {
+            filter = new SynonymGraphFilter(filter, synonymMap, true);
+            filter = new FlattenGraphFilter(filter);
+        }
+
         filter = new RemoveDuplicatesTokenFilter(filter);
 
         if (Boolean.TRUE.equals(CONFIG.getBool("posOpnNLPFilter"))) {
@@ -221,6 +234,23 @@ public class GermanAnalyzer extends Analyzer {
             case SNOWBALL -> new SnowballFilter(filter, new GermanStemmer());
             case NLP -> new OpenNLPLemmatizerFilter(filter, loadLemmatizerModel(CONFIG));
             case NONE -> filter;
+        };
+    }
+
+    private static Analyzer createSynonymNormalizationAnalyzer() {
+        return new Analyzer() {
+            @Override
+            protected TokenStreamComponents createComponents(final String fieldName) {
+                final Tokenizer source = new StandardTokenizer();
+                TokenStream filter = source;
+
+                filter = new LowerCaseFilter(filter);
+                filter = new NBSPFilter(filter);
+                filter = new GermanNormalizationFilter(filter);
+                filter = new ICUFoldingFilter(filter);
+
+                return new TokenStreamComponents(source, filter);
+            }
         };
     }
 

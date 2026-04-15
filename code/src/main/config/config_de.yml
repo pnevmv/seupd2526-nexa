@@ -17,7 +17,7 @@ posModel: de/openNLPmodels/opennlp-de-ud-gsd-pos-1.3-2.5.4.bin
 lemmatizerModel: de/openNLPmodels/opennlp-de-ud-gsd-lemmas-1.3-2.5.4.bin
 
 #path to the synonyms file
-synonymsFile: de/synonyms/synonyms.txt
+synonymsFile: de/synonims/openthesaurus.txt
 
 #path to the language detector model
 languageDetectorModel: langdetect-183.bin
@@ -43,7 +43,7 @@ positionFilter: false
 positionIncrement: 1
 
 #use the expansionFilter: select true if you want to use it, false otherwise
-expansionFilter: false
+expansionFilter: true
 
 #use the POSFilter from openNLP: select true if you want to use it, false otherwise
 posOpnNLPFilter: true
