@@ -5,22 +5,22 @@
 language: English
 
 #path to the tokenizerModel
-tokenizerModel: code/java/src/main/resources/openNLPmodels/fr-token.bin
+tokenizerModel: code/java/src/main/resources/en/openNLPmodels/en-tokens.bin
 
 #path to the sentenceModel
-sentenceModel: code/java/src/main/resources/openNLPmodels/fr-sent.bin
+sentenceModel: code/java/src/main/resources/en/openNLPmodels/en-sentence.bin
 
 #path to the posModel
-posModel: code/java/src/main/resources/openNLPmodels/fr-pos.bin
+posModel: code/java/src/main/resources/en/openNLPmodels/en-pos.bin
 
 #path to the lemmatizerModel
-lemmatizerModel: code/java/src/main/resources/openNLPmodels/fr-lemmatizer.bin
+lemmatizerModel: code/java/src/main/resources/en/openNLPmodels/en-lemmas.bin
 
 #path to the synonyms file
-synonymsFile: code/java/src/main/resources/synonyms/synonyms.txt
+synonymsFile: code/java/src/main/resources/en/synonyms/synonyms.txt
 
 #path to the language detector model
-languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin
+languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin    #????
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 
