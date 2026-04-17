@@ -214,9 +214,9 @@ public class EnglishAnalyzer extends Analyzer {
      */
     public static void main(String[] args) throws IOException {
         final String text = "The researcher's methodology for COVID-19 analysis is quite innovative.";
-        EnglishAnalyzer analyzer = new EnglishAnalyzer();
-
-        try (TokenStream stream = analyzer.tokenStream("field", new StringReader(text))) {
+        
+        try (EnglishAnalyzer analyzer = new EnglishAnalyzer();
+            TokenStream stream = analyzer.tokenStream("field", new StringReader(text))) {
             stream.reset();
             final CharTermAttribute tokenTerm = stream.addAttribute(CharTermAttribute.class);
             final PositionIncrementAttribute posAttr = stream.addAttribute(PositionIncrementAttribute.class);
@@ -229,7 +229,7 @@ public class EnglishAnalyzer extends Analyzer {
         }
     }
 }
-}
+
 
 
 
