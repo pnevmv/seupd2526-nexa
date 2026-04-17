@@ -25,15 +25,27 @@ import java.util.stream.Stream;
 
 public class DirectoryIndexer {
 
+    private static final int DEFAULT_PROGRESS_REPORT_INTERVAL = 10000;
+
     private final Path docsDir;
     private final IndexWriter writer;
+    private final int progressReportInterval;
 
 
     public DirectoryIndexer(Path docsDir, Path indexPath, Analyzer analyzer) throws IOException {
+        this(docsDir, indexPath, analyzer, DEFAULT_PROGRESS_REPORT_INTERVAL);
+    }
+
+    public DirectoryIndexer(Path docsDir, Path indexPath, Analyzer analyzer, int progressReportInterval)
+            throws IOException {
         if (!Files.isReadable(docsDir)) {
             throw new IllegalArgumentException("Error with folder: " + docsDir.toAbsolutePath());
         }
+        if (progressReportInterval <= 0) {
+            throw new IllegalArgumentException("Progress report interval must be greater than zero.");
+        }
         this.docsDir = docsDir;
+        this.progressReportInterval = progressReportInterval;
 
         Directory dir = FSDirectory.open(indexPath);
         IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
@@ -43,6 +55,10 @@ public class DirectoryIndexer {
 
     public DirectoryIndexer(Path docsDir, Path indexPath) throws IOException {
         this(docsDir, indexPath, buildLanguageAwareAnalyzer());
+    }
+
+    public DirectoryIndexer(Path docsDir, Path indexPath, int progressReportInterval) throws IOException {
+        this(docsDir, indexPath, buildLanguageAwareAnalyzer(), progressReportInterval);
     }
 
     public void index() throws IOException {
@@ -61,12 +77,13 @@ public class DirectoryIndexer {
                     JsonParser parser = new JsonParser(reader);
 
                     for (Publication pub : parser) {
-                        if (pub != null) {
+                        if (isIndexablePublication(pub)) {
                             String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
-                            writer.addDocument(pub.toLuceneDocument(detectedLanguage));
-                            languageCounts.merge(detectedLanguage, 1, Integer::sum);
+                            String indexingLanguage = resolveIndexingLanguage(detectedLanguage);
+                            writer.addDocument(pub.toLuceneDocument(indexingLanguage));
+                            languageCounts.merge(indexingLanguage, 1, Integer::sum);
                             count++;
-                            if (count % 10000 == 0) {
+                            if (count % progressReportInterval == 0) {
                                 System.out.printf("-> Process %d pubblications%n", count);
                             }
                         }
@@ -82,7 +99,17 @@ public class DirectoryIndexer {
 
         long end = System.currentTimeMillis();
         System.out.printf("\nIndexing complete. %d documents in target in %d ms.%n", count, (end - start));
-        System.out.println("Detected language distribution: " + languageCounts);
+        System.out.println("Indexed language distribution: " + languageCounts);
+    }
+
+    static String resolveIndexingLanguage(final String detectedLanguage) {
+        if (detectedLanguage == null || detectedLanguage.isBlank()) {
+            return LanguageDetectionUtil.ENGLISH;
+        }
+
+        return LanguageDetectionUtil.UNKNOWN.equalsIgnoreCase(detectedLanguage)
+                ? LanguageDetectionUtil.ENGLISH
+                : detectedLanguage.toLowerCase();
     }
 
     private static Analyzer buildLanguageAwareAnalyzer() {
@@ -113,6 +140,20 @@ public class DirectoryIndexer {
         counters.put(LanguageDetectionUtil.GERMAN, 0);
         counters.put(LanguageDetectionUtil.UNKNOWN, 0);
         return counters;
+    }
+
+    private static boolean isIndexablePublication(final Publication publication) {
+        if (publication == null) {
+            return false;
+        }
+
+        final String title = publication.getTitle();
+        final String abstractText = publication.getAbstract();
+
+        final boolean hasTitle = title != null && !title.isBlank();
+        final boolean hasAbstract = abstractText != null && !abstractText.isBlank() && !"#".equals(abstractText);
+
+        return hasTitle || hasAbstract;
     }
 
     public static void main(String[] args) {

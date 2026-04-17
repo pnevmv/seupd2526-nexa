@@ -29,7 +29,7 @@ public class LanguageDistributionCollectionTestLauncher {
         final Map<String, List<String>> languageSamples = createLanguageSamples();
         int totalDocuments = 0;
 
-        System.out.println("=== LANGUAGE DISTRIBUTION TEST ON REAL COLLECTION ===");
+        System.out.println("=== LANGUAGE DISTRIBUTION TEST ON collection_data.json ===");
         System.out.println("Collection path: " + collectionPath.toAbsolutePath());
         System.out.println();
 
@@ -47,7 +47,7 @@ public class LanguageDistributionCollectionTestLauncher {
                 }
             }
 
-            System.out.println("=== LANGUAGE DETECTION COMPLETED SUCCESSFULLY ===");
+            System.out.println("=== LANGUAGE DETECTION COMPLETED ===");
             System.out.println("Total documents analyzed: " + totalDocuments);
             System.out.println("English publications: " + languageCounts.get(LanguageDetectionUtil.ENGLISH));
             System.out.println("French publications: " + languageCounts.get(LanguageDetectionUtil.FRENCH));
