@@ -20,7 +20,7 @@ lemmatizerModel: code/java/src/main/resources/en/openNLPmodels/en-lemmas.bin
 synonymsFile: code/java/src/main/resources/en/synonyms/synonyms.txt
 
 #path to the language detector model
-languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin    #????
+languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 

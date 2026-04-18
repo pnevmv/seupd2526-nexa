@@ -266,10 +266,6 @@ public class AnalyzerUtil {
 
     static SynonymMap loadSynonymMap(@NotNull final ConfigManager languageConfig,
                                      @NotNull final Supplier<Analyzer> synonymNormalizerSupplier) {
-        if (languageConfig == null)
-            throw new NullPointerException("languageConfig cannot be null.");
-        if (synonymNormalizerSupplier == null)
-            throw new NullPointerException("synonymNormalizerSupplier cannot be null.");
 
         final String synonymsFile = languageConfig.getString("synonymsFile");
         if (synonymsFile == null || synonymsFile.isBlank()) {
