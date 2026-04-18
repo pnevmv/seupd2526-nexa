@@ -6,10 +6,10 @@ COPY bert.py /app/bert.py
 
 RUN pip install --no-cache-dir \
     fastapi \
-    uvicorn \
+    "uvicorn[standard]" \
     sentence-transformers \
     torch
 
-EXPOSE 8000
+EXPOSE 8080
 
 CMD ["python", "bert.py"]

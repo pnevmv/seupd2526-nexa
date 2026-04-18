@@ -68,10 +68,11 @@ public class DirectoryIndexer {
                                 pub.setEmbedding(vector);
 
                             } catch (Exception e) {
-                                System.err.println("Errore vettorizzazione per " + pub.getPubkey() + ": " + e.getMessage());
+                                System.err.println("Errore vettorizzazione per id: " + pub.getPubkey() + ": " + e.getMessage());
                             }
 
                             writer.addDocument(pub.toLuceneDocument());
+                            System.out.println("Indexed document: " + count + " with id: " + pub.getPubkey());
                             count++;
                         }
                     }
@@ -97,7 +98,7 @@ public class DirectoryIndexer {
         String jsonBody = mapper.writeValueAsString(payload);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8000/embed"))
+                .uri(URI.create("http://localhost:8080/embed"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();

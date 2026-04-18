@@ -6,6 +6,8 @@ services:
     container_name: bert-server
     ports:
       - "8080:8080"
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
     volumes:
       - hf_cache:/root/.cache/huggingface
     restart: unless-stopped
