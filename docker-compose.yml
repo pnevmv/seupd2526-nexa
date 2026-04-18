@@ -1,0 +1,19 @@
+
+services:
+  bert-api:
+    image: python:3.10-slim
+    container_name: bert-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./code/src/main/python/vector.py:/app/vector.py
+      - hf_cache:/root/.cache/huggingface
+    working_dir: /app
+    command: >
+      sh -c "pip install --no-cache-dir fastapi uvicorn sentence-transformers torch && 
+             python vector.py"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+
+volumes:
+  hf_cache:

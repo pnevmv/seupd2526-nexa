@@ -71,6 +71,35 @@ public class DirectoryIndexer {
         System.out.printf("\nIndexing complete. %d documents in target in %d ms.%n", count, (end - start));
     }
 
+    private float[] getVector(String text) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        ObjectMapper mapper = new ObjectMapper();
+
+        Map<String, Object> payload = Map.of("texts", List.of(text));
+        String jsonBody = mapper.writeValueAsString(payload);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8000/embed"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Errore dal server BERT: " + response.body());
+        }
+
+        JsonNode root = mapper.readTree(response.body());
+        JsonNode vectorNode = root.path("embeddings").get(0);
+
+        float[] vector = new float[vectorNode.size()];
+        for (int i = 0; i < vectorNode.size(); i++) {
+            vector[i] = (float) vectorNode.get(i).asDouble();
+        }
+        return vector;
+    }
+
 
     public static void main(String[] args) {
         Path inputDir = Paths.get("C:\\Users\\andre\\OneDrive\\Desktop\\desktop\\SEARCH");//change directory to test

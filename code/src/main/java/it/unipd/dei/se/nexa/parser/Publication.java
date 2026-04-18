@@ -31,6 +31,12 @@ public class Publication {
     @JsonProperty("authors")
     private String authors;
 
+    private float[] embedding;
+
+    public void setEmbedding(float[] embedding) {
+        this.embedding = embedding;
+    }
+
     /** Default constructor for Jackson */
     public Publication() {}
 
@@ -66,6 +72,11 @@ public class Publication {
         doc.add(new BodyField("abstract", abstract_text));
         doc.add(new TextField("venue", venue, Field.Store.NO));
         doc.add(new TextField("authors", authors, Field.Store.NO));
+
+        if (embedding != null && embedding.length > 0) {
+            doc.add(new KnnFloatVectorField("pub_vector", embedding, VectorSimilarityFunction.COSINE));
+        }
+
         return doc;
     }
 }
