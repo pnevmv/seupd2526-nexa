@@ -5,22 +5,22 @@
 language: French
 
 #path to the tokenizerModel
-tokenizerModel: code/src/main/java/resources/fr/openNLPmodels/fr-token.bin
+tokenizerModel: src/main/resources/fr/openNLPmodels/fr-token.bin
 
 #path to the sentenceModel
-sentenceModel: code/src/main/java/resources/fr/openNLPmodels/fr-sent.bin
+sentenceModel: src/main/resources/fr/openNLPmodels/fr-sent.bin
 
 #path to the posModel
-posModel: code/src/main/java/resources/fr/openNLPmodels/fr-pos.bin
+posModel: src/main/resources/fr/openNLPmodels/fr-pos.bin
 
 #path to the lemmatizerModel
-lemmatizerModel: code/src/main/java/resources/fr/openNLPmodels/fr-lemmatizer.bin
+lemmatizerModel: src/main/resources/fr/openNLPmodels/fr-lemmatizer.bin
 
 #path to the synonyms file
-synonymsFile: code/src/main/java/resources/synonyms/synonyms.txt
+synonymsFile: src/main/resources/fr/synonyms/synonyms.txt
 
 #path to the language detector model
-languageDetectorModel: code/src/main/java/resources/fr/openNLPmodels/langdetect-183.bin
+languageDetectorModel: src/main/resources/langdetect-183.bin
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 
@@ -52,11 +52,11 @@ posOpnNLPFilter: true
 repeatedLetterFilter: true
 
 #type of tokenizer to use: select one from [Whitespace, Standard, Letter, Nlp]
-tokenizerType: Letter
+tokenizerType: Nlp
 
 #customized stop list
 #set the stop list path if it should be used, otherwise leave empty
-customStopList:
+customStopList: src/main/resources/fr/stoplists/BstoplistFR.txt
 
 #type of stemmer to use for French: select on from [FrenchMinimal, FrenchLight, SnowBall, Nlp, None]
-stemFilter: FrenchMinimal
+stemFilter: Nlp
