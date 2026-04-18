@@ -1,4 +1,4 @@
-package it.unipd.dei.se.nexa.index;
+package it.unipd.dei.se.nexa.indexer;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;

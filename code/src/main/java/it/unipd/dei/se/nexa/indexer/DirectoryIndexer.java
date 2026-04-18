@@ -1,10 +1,11 @@
-package it.unipd.dei.se.nexa.index;
+package it.unipd.dei.se.nexa.indexer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
 
+import it.unipd.dei.se.nexa.utility.ConfigManager;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
@@ -28,6 +29,7 @@ public class DirectoryIndexer {
 
     private final Path docsDir;
     private final IndexWriter writer;
+    private static final ConfigManager config = ConfigManager.getGlobalConfig();
 
 
     public DirectoryIndexer(Path docsDir, Path indexPath, Analyzer analyzer) throws IOException {
@@ -119,11 +121,10 @@ public class DirectoryIndexer {
 
     public static void main(String[] args) {
         Path inputDir = Paths.get("/Volumes/KINGSTON/collection_data.json");//change directory to test
-        Path indexDir = Paths.get("target/lucene-index");
 
         try (Analyzer analyzer = new StandardAnalyzer()) {
             System.out.println("DirectoryIndexer...");
-            DirectoryIndexer indexer = new DirectoryIndexer(inputDir, indexDir, analyzer);
+            DirectoryIndexer indexer = new DirectoryIndexer(inputDir, Path.of(config.getString("indexPath")), analyzer);
             indexer.index();
         } catch (IOException e) {
             throw new IllegalStateException("Error I/O handle while indexing", e);

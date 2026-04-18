@@ -1,7 +1,7 @@
 package it.unipd.dei.se.nexa.parser;
 
 import org.apache.lucene.document.*;
-import it.unipd.dei.se.nexa.index.BodyField;
+import it.unipd.dei.se.nexa.indexer.BodyField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
