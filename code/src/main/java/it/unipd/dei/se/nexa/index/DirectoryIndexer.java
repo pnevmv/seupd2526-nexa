@@ -1,5 +1,7 @@
 package it.unipd.dei.se.nexa.index;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
 
@@ -12,7 +14,13 @@ import org.apache.lucene.store.FSDirectory;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.*;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 
@@ -51,11 +59,18 @@ public class DirectoryIndexer {
 
                     for (Publication pub : parser) {
                         if (pub != null) {
+                            try {
+                                String textToVectorize = pub.getTitle() + " " + pub.getAbstract();
+
+                                float[] vector = getVector(textToVectorize);
+                                pub.setEmbedding(vector);
+
+                            } catch (Exception e) {
+                                System.err.println("Errore vettorizzazione per " + pub.getPubkey() + ": " + e.getMessage());
+                            }
+
                             writer.addDocument(pub.toLuceneDocument());
                             count++;
-                            if (count % 10000 == 0) {
-                                System.out.printf("-> Process %d pubblications%n", count);
-                            }
                         }
                     }
                 } catch (Exception e) {
@@ -72,6 +87,7 @@ public class DirectoryIndexer {
     }
 
     private float[] getVector(String text) throws Exception {
+
         HttpClient client = HttpClient.newHttpClient();
         ObjectMapper mapper = new ObjectMapper();
 
@@ -102,7 +118,7 @@ public class DirectoryIndexer {
 
 
     public static void main(String[] args) {
-        Path inputDir = Paths.get("C:\\Users\\andre\\OneDrive\\Desktop\\desktop\\SEARCH");//change directory to test
+        Path inputDir = Paths.get("/Volumes/KINGSTON/collection_data.json");//change directory to test
         Path indexDir = Paths.get("target/lucene-index");
 
         try (Analyzer analyzer = new StandardAnalyzer()) {

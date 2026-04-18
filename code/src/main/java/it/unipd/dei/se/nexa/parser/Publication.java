@@ -1,14 +1,11 @@
 package it.unipd.dei.se.nexa.parser;
 
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.IntPoint;
-import org.apache.lucene.document.StoredField;
-import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.*;
 import it.unipd.dei.se.nexa.index.BodyField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.lucene.index.VectorSimilarityFunction;
 
 /**
  * Java object representing one of the publication
