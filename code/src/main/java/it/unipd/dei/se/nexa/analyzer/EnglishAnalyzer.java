@@ -28,6 +28,10 @@ import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 
+import org.apache.lucene.analysis.core.FlattenGraphFilter;
+import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
+import org.apache.lucene.analysis.synonym.SynonymMap;
+
 import org.tartarus.snowball.ext.EnglishStemmer;
 
 import static it.unipd.dei.se.nexa.analyzer.AnalyzerUtil.*;
@@ -75,6 +79,11 @@ public class EnglishAnalyzer extends Analyzer {
     private final String stopListFilePath;
 
     /**
+     * Synonym map loaded from the configured thesaurus file.
+     */
+    private final SynonymMap synonymMap;
+
+    /**
      * Configuration class initialized for English context
      */
     private static final ConfigManager config = ConfigManager.getInstance("en");
@@ -100,6 +109,7 @@ public class EnglishAnalyzer extends Analyzer {
         this.maxLength = maxLength;
         this.stopListFilePath = stopListFilePath;
         this.stemFilterType = stemFilterType;
+        this.synonymMap = loadSynonymMap(config, EnglishAnalyzer::createSynonymNormalizationAnalyzer);
     }
 
     /**
@@ -140,6 +150,9 @@ public class EnglishAnalyzer extends Analyzer {
             case "Nlp" -> this.stemFilterType = StemFilterType.NLP;
             default -> this.stemFilterType = StemFilterType.NONE;
         }
+
+        this.synonymMap = loadSynonymMap(config, EnglishAnalyzer::createSynonymNormalizationAnalyzer);
+
     }
 
     /**
@@ -181,7 +194,14 @@ public class EnglishAnalyzer extends Analyzer {
 
         filter = new ICUFoldingFilter(filter);
         filter = new NBSPFilter(filter);
+
+        if (synonymMap != null) {
+            filter = new SynonymGraphFilter(filter, synonymMap, true);
+            filter = new FlattenGraphFilter(filter);
+        }
+
         filter = new RemoveDuplicatesTokenFilter(filter);
+
 
         if (Boolean.TRUE.equals(config.getBool("posOpnNLPFilter")))
             filter = new CompoundPOSTokenFilter(filter, loadPosTaggerModel());
@@ -209,6 +229,22 @@ public class EnglishAnalyzer extends Analyzer {
         return new TokenStreamComponents(source, filter);
     }
 
+    private static Analyzer createSynonymNormalizationAnalyzer() {
+        return new Analyzer() {
+            @Override
+            protected TokenStreamComponents createComponents(final String fieldName) {
+                final Tokenizer source = new StandardTokenizer();
+                TokenStream filter = source;
+
+                filter = new LowerCaseFilter(filter);
+                filter = new ICUFoldingFilter(filter);
+                filter = new NBSPFilter(filter);
+
+                return new TokenStreamComponents(source, filter);
+            }
+        };
+    }
+
     /**
      * Main method of the class for testing purposes.
      */
@@ -218,10 +254,12 @@ public class EnglishAnalyzer extends Analyzer {
         try (EnglishAnalyzer analyzer = new EnglishAnalyzer();
             TokenStream stream = analyzer.tokenStream("field", new StringReader(text))) {
             stream.reset();
+
             final CharTermAttribute tokenTerm = stream.addAttribute(CharTermAttribute.class);
             final PositionIncrementAttribute posAttr = stream.addAttribute(PositionIncrementAttribute.class);
 
             int position = 0;
+
             while (stream.incrementToken()) {
                 position += posAttr.getPositionIncrement();
                 System.out.printf("+ token: %-20s | Position: %d%n", tokenTerm.toString(), position);
