@@ -8,11 +8,11 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 
-public final class repetedLetterFilter extends TokenFilter {
+public final class RepeatedLetterFilter extends TokenFilter {
     private static final Pattern REPEATED_CHARS = Pattern.compile("(.)\\1{2,}");
     private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
 
-    public repetedLetterFilter(TokenStream input) {
+    public RepeatedLetterFilter(TokenStream input) {
         super(input);
     }
 

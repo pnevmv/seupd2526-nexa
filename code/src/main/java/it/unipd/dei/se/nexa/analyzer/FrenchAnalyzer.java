@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.FlattenGraphFilter;
 import org.apache.lucene.analysis.core.LetterTokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopFilter;
@@ -23,6 +24,8 @@ import org.apache.lucene.analysis.opennlp.OpenNLPTokenizer;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
+import org.apache.lucene.analysis.synonym.SynonymMap;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.util.ElisionFilter;
@@ -135,6 +138,11 @@ public class FrenchAnalyzer extends Analyzer {
     private final String stopListFilePath;
 
     /**
+     * Synonym map loaded from the configured thesaurus file.
+     */
+    private final SynonymMap synonymMap;
+
+    /**
      * Configuration class
      */
     private static final ConfigManager config = ConfigManager.getInstance("fr");
@@ -160,6 +168,7 @@ public class FrenchAnalyzer extends Analyzer {
         this.maxLength = maxLength;
         this.stopListFilePath = stopListFilePath;
         this.stemFilterType = stemFilterType;
+        this.synonymMap = loadSynonymMap(config, FrenchAnalyzer::createSynonymNormalizationAnalyzer);
     }
 
     /**
@@ -225,6 +234,8 @@ public class FrenchAnalyzer extends Analyzer {
                 break;
         }
 
+        this.synonymMap = loadSynonymMap(config, FrenchAnalyzer::createSynonymNormalizationAnalyzer);
+
     }
 
     /**
@@ -257,7 +268,7 @@ public class FrenchAnalyzer extends Analyzer {
         filter = new LowerCaseFilter(source);
 
         if (Boolean.TRUE.equals(config.getBool("repeatedLetterFilter")))
-            filter = new repetedLetterFilter(filter);
+            filter = new RepeatedLetterFilter(filter);
 
         if (Boolean.TRUE.equals(config.getBool("expansionFilter")))
             filter = new AbbreviationExpansionFilter(filter, AnalyzerUtil.getAbbreviationMap("fr"));
@@ -265,6 +276,12 @@ public class FrenchAnalyzer extends Analyzer {
         filter = new ICUFoldingFilter(filter);
         filter = new NBSPFilter(filter);
         filter = new ElisionFilter(filter, org.apache.lucene.analysis.fr.FrenchAnalyzer.DEFAULT_ARTICLES);
+
+        if (synonymMap != null) {
+            filter = new SynonymGraphFilter(filter, synonymMap, true);
+            filter = new FlattenGraphFilter(filter);
+        }
+
         filter = new RemoveDuplicatesTokenFilter(filter);
 
         if (Boolean.TRUE.equals(config.getBool("posOpnNLPFilter")))
@@ -299,6 +316,23 @@ public class FrenchAnalyzer extends Analyzer {
                 break;
         }
         return new TokenStreamComponents(source, filter);
+    }
+
+    private static Analyzer createSynonymNormalizationAnalyzer() {
+        return new Analyzer() {
+            @Override
+            protected TokenStreamComponents createComponents(final String fieldName) {
+                final Tokenizer source = new StandardTokenizer();
+                TokenStream filter = source;
+
+                filter = new LowerCaseFilter(filter);
+                filter = new ICUFoldingFilter(filter);
+                filter = new NBSPFilter(filter);
+                filter = new ElisionFilter(filter, org.apache.lucene.analysis.fr.FrenchAnalyzer.DEFAULT_ARTICLES);
+
+                return new TokenStreamComponents(source, filter);
+            }
+        };
     }
 
     /**

@@ -5,22 +5,22 @@
 language: German
 
 #path to the tokenizerModel
-tokenizerModel: code/java/src/main/resources/openNLPmodels/fr-token.bin
+tokenizerModel: src/main/resources/de/openNLPmodels/opennlp-de-ud-gsd-tokens-1.3-2.5.4.bin
 
 #path to the sentenceModel
-sentenceModel: code/java/src/main/resources/openNLPmodels/fr-sent.bin
+sentenceModel: src/main/resources/de/openNLPmodels/opennlp-de-ud-gsd-sentence-1.3-2.5.4.bin
 
 #path to the posModel
-posModel: code/java/src/main/resources/openNLPmodels/fr-pos.bin
+posModel: src/main/resources/de/openNLPmodels/opennlp-de-ud-gsd-pos-1.3-2.5.4.bin
 
 #path to the lemmatizerModel
-lemmatizerModel: code/java/src/main/resources/openNLPmodels/fr-lemmatizer.bin
+lemmatizerModel: src/main/resources/de/openNLPmodels/opennlp-de-ud-gsd-lemmas-1.3-2.5.4.bin
 
 #path to the synonyms file
-synonymsFile: code/java/src/main/resources/synonyms/synonyms.txt
+synonymsFile: src/main/resources/de/synonims/openthesaurus.txt
 
 #path to the language detector model
-languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin
+languageDetectorModel: src/main/resources/langdetect-183.bin
 
 # ------------------------------------------ ANALYZER ------------------------------------------------------------------
 
@@ -31,33 +31,32 @@ minLength: 2
 maxLength: 36
 
 #use the Ngrams filter: select true if you want to use it, false otherwise
-nGramsFilter: false
+nGramsFilter: true
 
 #length of nGram (for words): select the number of shingles
 shingleSize: 3
 
 #use the PositionFilter: select true if you want to use it, false otherwise
-positionFilter: false
+positionFilter: true
 
 #increment of position to ensure they are consecutive, DO NOT CHANGE (CHECK IF IS IT 1)
 positionIncrement: 1
 
 #use the expansionFilter: select true if you want to use it, false otherwise
-expansionFilter: false
+expansionFilter: true
 
 #use the POSFilter from openNLP: select true if you want to use it, false otherwise
-posOpnNLPFilter: false
+posOpnNLPFilter: true
 
 #use repeatedLetterFilter: select true if you want to use it, false otherwise
-repeatedLetterFilter: false
+repeatedLetterFilter: true
 
 #type of tokenizer to use: select one from [Whitespace, Standard, Letter, Nlp]
-tokenizerType: Letter
+tokenizerType: Nlp
 
 #customized stop list
 #set the stop list path if it should be used, otherwise leave empty
-customStopList:
+customStopList: src/main/resources/de/stoplists/BstoplistDE.txt
 
-#type of stemmer to use for French: select on from [FrenchMinimal, FrenchLight, SnowBall, Nlp, None]
-stemFilter: None
-
+#type of stemmer to use for German: select one from [GermanMinimal, GermanLight, German, SnowBall, Nlp, None]
+stemFilter: Nlp

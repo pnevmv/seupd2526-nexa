@@ -5,6 +5,7 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.text.Normalizer;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
@@ -20,9 +21,11 @@ public abstract class CommonParser implements Iterator<Publication>, Iterable<Pu
     protected static final Pattern CITATION_AUTHORS = Pattern.compile("\\([A-Za-z\\s.,]+et al\\.?.*?\\)");
     protected static final Pattern SECTIONS = Pattern.compile("(?i)\\b(Abstract|Objective|Design|Setting|Participants|Results|Conclusions|Methods|Background)\\b\\s*:?");
     protected static final Pattern EMOJI = Pattern.compile("[\\x{1F600}-\\x{1F64F}\\x{2700}-\\x{27BF}\\x{1F300}-\\x{1F5FF}\\x{1F680}-\\x{1F6FF}\\x{1F900}-\\x{1F9FF}\\x{2600}-\\x{26FF}]");
+    protected static final Pattern TWITTER_MENTION = Pattern.compile("@\\w+");
 
     public static String cleanText(String input) {
         if (input == null || input.isEmpty()) return input;
+        input = Normalizer.normalize(input, Normalizer.Form.NFC);
         input = StringEscapeUtils.unescapeHtml4(input);
         input = HTML.matcher(input).replaceAll(" ");
         input = URL.matcher(input).replaceAll(" ");
@@ -32,6 +35,7 @@ public abstract class CommonParser implements Iterator<Publication>, Iterable<Pu
         input = input.replace('·', '.');
         input = input.replaceAll("[±≥°]", " ");
         input = EMOJI.matcher(input).replaceAll(" ");
+        input = TWITTER_MENTION.matcher(input).replaceAll(" ");
         input = input.replaceAll("\\s+", " ").trim();
 
         return input;
