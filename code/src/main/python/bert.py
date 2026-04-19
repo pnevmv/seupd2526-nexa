@@ -57,10 +57,10 @@ async def process_pipeline(data: TextRequest):
             if detected_lang != 'en':
 
                 english_text = translator.translate(text, target_lang='en')
+                embedding = model.encode(text).tolist()
             else:
                 english_text = text
-
-            embedding = model.encode(text).tolist()
+                embedding = model_en.encode(text).tolist()
 
             results.append(ProcessedDocument(
                 original_text=text,
