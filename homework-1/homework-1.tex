@@ -24,21 +24,33 @@
 
 %%
 %% The "title" command
-\title{SEUPD@CLEF: Team <Acronym>}
+\title{SEUPD@CLEF: Team NEXA}
 
 %%
 %% The "author" command and its associated commands are used to define
 %% the authors and their affiliations.
-\author[1]{Name Surname}[%
-email=name.surname@studenti.unipd.it
+\author[1]{Paul Arlot}[
+  email=paullouisjean.arlot@studenti.unipd.it
 ]
 
-\author[1]{Name Surname}[%
-email=name.surname@studenti.unipd.it
+\author[1]{Andrea Di Tillo}[
+  email=andrea.ditillo@studenti.unipd.it
 ]
 
-\author[1]{Name Surname}[%
-email=name.surname@studenti.unipd.it
+\author[1]{Gaute Greiff Flagstad}[
+  email=gaute.greiff.flaegstad@studenti.unipd.it
+]
+
+\author[1]{Bita Khashechian}[
+  email=bita.khashechian@studenti.unipd.it
+]
+
+\author[1]{Danil Smirnov}[
+  email=danil.smirnov@studenti.unipd.it
+]
+
+\author[1]{Marco Tomaiuoli}[
+  email=marco.tomaiuoli@studenti.unipd.it
 ]
 
 \address[1]{University of Padua, Italy}
@@ -48,21 +60,23 @@ email=name.surname@studenti.unipd.it
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-  A clear and well-documented \LaTeX{} document is presented as an
-  article formatted for publication by CEUR-WS in a conference
-  proceedings. Based on the ``ceurart'' document class, this article
-  presents and explains many of the common variations, as well as many
-  of the formatting elements an author may use in the preparation of
-  the documentation of their work.
+
+  This paper presents the system developed by Team NEXA for Task 1 of the CLEF 2026 CheckThat! Lab, focusing on the retrieval of scientific sources for claims found on social media. Given the challenge of linking informal web discourse to formal scientific literature across English, German, and French, we propose a multi-stage retrieval framework. Our approach combines traditional lexical search using BM25 with a neural re-ranking component based on multilingual transformer models. The system aims to bridge the linguistic and stylistic gap between social media posts and academic abstracts, providing a scalable solution to assist fact-checkers in verifying scientific information.
+
 \end{abstract}
 
 %%
 %% Keywords. The author(s) should pick words that accurately describe
 %% the work being presented. Separate the keywords with commas.
 \begin{keywords}
-  keyword 1 \sep
-  keyword 2 \sep
-  keyword 3 
+
+  Information Retrieval \sep
+  CLEF \sep
+  CheckThat! \sep
+  Scientific Claim Verification \sep
+  Lucene \sep
+  Multilingual Search
+
 \end{keywords}
 
 %%
