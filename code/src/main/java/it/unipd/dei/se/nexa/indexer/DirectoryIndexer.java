@@ -98,7 +98,7 @@ public class DirectoryIndexer {
         String jsonBody = mapper.writeValueAsString(payload);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/embed"))
+                .uri(URI.create("http://localhost:8080/process"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
