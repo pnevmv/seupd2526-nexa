@@ -75,7 +75,7 @@ public class EnglishAnalyzer extends Analyzer {
     private final StemFilterType stemFilterType;
     private final Integer minLength;
     private final Integer maxLength;
-    private static final int MAX_WORD = 40; // since English medical/scientific words can be long
+    private static final int MAX_WORD = 45; // since English medical/scientific words can be long
     private final String stopListFilePath;
 
     /**

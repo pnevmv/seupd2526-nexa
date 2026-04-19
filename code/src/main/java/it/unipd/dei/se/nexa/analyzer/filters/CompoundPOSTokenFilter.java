@@ -62,7 +62,7 @@ public final class CompoundPOSTokenFilter extends TokenFilter {
                             (tag1.startsWith("NC") && tag2.startsWith("P") && tag3.startsWith("NC"))) {
 
                         clearAttributes();
-                        termAttr.append(tokens.get(i) + "-" + tokens.get(i + 2));
+                        termAttr.append(tokens.get(i)).append("-").append(tokens.get(i + 2));
                         typeAttr.setType("NN");
                         newBuffer.add(captureState());
                         i += 3;
@@ -80,7 +80,7 @@ public final class CompoundPOSTokenFilter extends TokenFilter {
                             (tag1.startsWith("NC") && tag2.startsWith("ADJ"))) {
 
                         clearAttributes();
-                        termAttr.append(tokens.get(i) + "-" + tokens.get(i + 1));
+                        termAttr.append(tokens.get(i)).append("-").append(tokens.get(i + 1));
                         typeAttr.setType("NN");
                         newBuffer.add(captureState());
                         i += 2;
