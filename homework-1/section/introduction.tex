@@ -1,6 +1,8 @@
 \section{Introduction}
 \label{sec:introduction}
+Information Retrieval systems play a fundamental role in enabling access to relevant data across massive, often heterogeneous corpora. In the context of the CheckThat! Lab at CLEF, which focuses on identifying the original scientific research behind social media claims, we have developed a configurable IR system. Our system supports a wide range of preprocessing and indexing strategies, enabling us to experiment with different setups to address the vocabulary gap between informal web text and formal scientific abstracts.
 
-Introduce the context, motivations, and goals of your project.
+The motivation for this project comes from the need to fight disinformation by making fact-checking faster. As noted by CheckThat!, manually searching for scientific evidence is very slow for human experts. By automating this source retrieval process, we can help fact-checkers quickly link a claim to its original paper. To achieve this, we compare two methods consisting of a
+ \textbf{language-based approach} using specific tools for English, German, and French, and a \textbf{general approach} that treats all languages the same. Our goal is to find the best way to accurately match multilingual claims to their scientific sources.
 
 The paper is organized as follows: Section~\ref{sec:methodology} describes our approach; Section~\ref{sec:setup} explains our experimental setup; Section~\ref{sec:results} discusses our main findings; finally, Section~\ref{sec:conclusion} draws some conclusions and outlooks for future work.
