@@ -1,4 +1,88 @@
 \section{Methodology}
 \label{sec:methodology}
 
-Describe the methodology you have adopted, the architecture of your system, your workflow, etc.
+In this section, we describe the architecture and components of our system. Our approach follows a multi-stage Information Retrieval pipeline combining traditional lexical matching with semantic representations.
+
+\subsection{Text Analysis}
+
+The text analysis phase transforms raw textual input into a stream of tokens that can be indexed and later retrieved. The analysis is performed through language-specific analyzer classes, which extend the Apache Lucene \texttt{Analyzer} framework. In our system, we provide separate analyzers for each supported language, namely \texttt{EnglishAnalyzer}, \texttt{FrenchAnalyzer}, and \texttt{GermanAnalyzer}. Each analyzer is configured using language-dependent resources and processing pipelines.
+
+All analyzers follow a common architecture composed of three main components:
+
+\begin{itemize}
+    \item \textbf{Tokenizer:} Responsible for splitting the input text into raw tokens.
+    \item \textbf{Token Filters:} Sequentially modify, normalize, or enrich the token stream.
+    \item \textbf{Stemming/Lemmatization:} Reduces tokens to their base or root forms to improve generalization.
+\end{itemize}
+
+The overall pipeline is dynamically configured through external YAML configuration files, allowing flexible adaptation of processing strategies for different languages and experimental settings.
+
+\subsubsection{Tokenizer Configurations}
+
+Multiple tokenization strategies are supported, enabling the system to handle different types of input text:
+
+\begin{itemize}
+    \item \textbf{Standard Tokenizer:} Uses Lucene’s rule-based tokenizer to handle punctuation, digits, and word boundaries.
+    \item \textbf{Letter Tokenizer:} Emits tokens composed only of alphabetic characters, treating non-letter characters as delimiters.
+    \item \textbf{Whitespace Tokenizer:} Splits input strictly on whitespace characters without processing punctuation.
+    \item \textbf{NLP Tokenizer:} Uses Apache OpenNLP models to perform linguistically informed tokenization.
+\end{itemize}
+
+The tokenizer type is selected through configuration files, allowing different languages or datasets to use the most suitable strategy.
+
+\subsubsection{Token Filters}
+
+Token filters are applied after tokenization to normalize and enrich the token stream. These filters are categorized into general (language-independent) and language-specific filters.
+
+\paragraph{General Token Filters}
+
+These filters perform general normalization operations across all languages:
+
+\begin{itemize}
+    \item \textbf{LowerCaseFilter:} Converts all tokens to lowercase.
+    \item \textbf{ICUFoldingFilter:} Normalizes accented and special characters into ASCII equivalents.
+    \item \textbf{NBSPFilter:} Removes non-breaking spaces and trims tokens.
+    \item \textbf{RemoveDuplicatesTokenFilter:} Eliminates duplicate tokens.
+    \item \textbf{LengthFilter:} Removes tokens that are too short or too long.
+    \item \textbf{RepeatedLetterFilter:} Normalizes tokens with repeated characters (e.g., ``soooo'' $\rightarrow$ ``soo'').
+\end{itemize}
+
+\paragraph{Enrichment Filters}
+
+To improve semantic representation, additional filters are applied:
+
+\begin{itemize}
+    \item \textbf{AbbreviationExpansionFilter:} Expands abbreviations using predefined mappings (e.g., ``ml'' $\rightarrow$ ``machine learning'').
+    \item \textbf{CompoundPOSTokenFilter:} Uses Part-of-Speech tagging to combine semantically related tokens into compound expressions.
+    \item \textbf{ShingleFilter:} Generates n-grams to capture local contextual information.
+    \item \textbf{PositionFilter:} Normalizes positional increments for indexing consistency.
+\end{itemize}
+
+\paragraph{Language-Specific Filters}
+
+Each language analyzer applies additional filters tailored to its linguistic characteristics:
+
+\begin{itemize}
+    \item English-specific filters (e.g., possessive removal, English stopwords)
+    \item French-specific filters (e.g., elision handling, French stopwords)
+    \item German-specific filters (e.g., compound handling and normalization)
+\end{itemize}
+
+This design ensures that each language is processed according to its grammatical and lexical properties.
+
+\subsubsection{Stemming and Lemmatization}
+
+The system supports multiple strategies for reducing tokens to their canonical forms: \textbf{Porter Stemmer}, \textbf{Snowball Stemmer}, \textbf{OpenNLP Lemmatizer}, \textbf{No Stemming}.
+
+The selected method is controlled through configuration files and can vary depending on the language and experimental setup.
+
+\subsubsection{Multi-Language Analyzer Design}
+
+A key feature of the system is the use of separate analyzers for each language. Each analyzer loads its own resources, including: Language-specific stopword lists, Synonym dictionaries, Abbreviation mappings, OpenNLP models (tokenizer, POS tagger, lemmatizer).
+
+These resources are organized in a structured directory hierarchy (e.g., \texttt{resources/en}, \texttt{resources/fr}, \texttt{resources/de}), ensuring clear separation between languages.
+
+This design allows the system to handle multilingual corpora effectively, as each language benefits from tailored preprocessing and linguistic enrichment.
+
+
+Overall, the integration of language-specific analyzers, configurable processing pipelines, and rich linguistic resources allows the system to effectively bridge the gap between informal social media text and formal scientific documents, improving the quality of retrieval.
