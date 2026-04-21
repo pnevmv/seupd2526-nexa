@@ -28,6 +28,42 @@ The repository is organised as follows:
 * `homework-2`: this folder contains the final paper submitted to CLEF.
 * `slides`: this folder contains the slides used for presenting the conducted project.
 
+## Gemma translation server
+
+The multilingual translation pipeline uses a local Python server that exposes
+`google/translategemma-4b-it` through an HTTP endpoint consumed by the Java code.
+
+From the `code` directory, create the virtual environment and install the
+required packages:
+
+```bash
+cd code
+python3 -m venv scripts/.venv
+scripts/.venv/bin/pip install -r scripts/requirements-translategemma.txt
+```
+
+Create the local environment file from the example and set your Hugging Face token:
+
+```bash
+cp scripts/translategemma.env.example scripts/translategemma.env
+```
+
+Then start the translation server:
+
+```bash
+./scripts/run_translategemma_server.sh
+```
+
+The server listens on `http://127.0.0.1:8008` by default. A quick health check is:
+
+```bash
+curl http://127.0.0.1:8008/health
+```
+
+The Java pipeline uses the settings in `code/src/main/config/config.yml`.
+To enable document translation before indexing, set
+`translateNonEnglishPublicationsToEnglish: true`.
+
 ## License
 
 All the contents of this repository are shared using the [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
