@@ -39,6 +39,7 @@
 *.synctex.gz
 *.bbl
 *.blg
+homework-*/build/
 
 # Matlab
 *.m~
@@ -77,3 +78,6 @@ datasets/
 
 # OSX
 .DS_Store
+
+# VSCode
+.vscode/

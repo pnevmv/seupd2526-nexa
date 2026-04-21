@@ -1,7 +1,33 @@
-\section{Methodology}
-\label{sec:methodology}
+\section{Methodology}\label{sec:methodology}
 
 In this section, we describe the architecture and components of our system. Our approach follows a multi-stage Information Retrieval pipeline combining traditional lexical matching with semantic representations.
+
+\subsection{Document Parsing}
+
+The first stage of the retrieval pipeline is responsible for transforming the raw corpus into a stream of structured document objects suitable for indexing. The parsing starts with an abstract \texttt{CommonParser} class, which defines a common interface and a shared text cleaning pipeline, and concrete subclasses specialized for individual input formats. For this system, documents are supplied as JSON files and processed by the \texttt{JsonParser} subclass.
+
+\texttt{CommonParser} implements the \texttt{Iterator<Publication>} interface, yielding one \texttt{Publication} at a time as the input stream is read. Each \texttt{Publication} exposes the fields relevant for retrieval: a numerical identifier (\texttt{pubkey}), the \texttt{title}, \texttt{abstract}, \texttt{venue}, and \texttt{authors}. Missing or \texttt{null} fields are replaced with empty defaults, and empty abstracts are substituted with a placeholder token to preserve document integrity during indexing.
+
+\subsubsection{JSON Parsing}
+
+The \texttt{JsonParser} relies on the Jackson library to process collection of documents encoded as JSON arrays of document objects. The input stream is traversed incrementally, so that memory usage remains bounded regardless of the total number of documents. On each iteration, a single JSON node is mapped to a \texttt{Publication} instance by extracting the corresponding fields and applying the text cleaning pipeline to the abstract.
+
+\subsubsection{Text Cleaning}
+
+Prior to analysis, the abstract of each document is passed through a normalization routine (\texttt{cleanText}) designed to remove the noise typically introduced by both scientific writing and user-generated content. The routine applies the following transformations in sequence:
+
+\begin{itemize}
+    \item \textbf{Unicode Normalization:} Text is converted to the canonical NFC form to ensure a consistent character representation.
+    \item \textbf{HTML Unescaping and Stripping:} HTML entities are decoded and residual HTML tags are removed.
+    \item \textbf{URL Removal:} Hyperlinks are stripped to prevent them from polluting the token stream.
+    \item \textbf{Citation Removal:} Both bracketed references (e.g., ``[1, 2--5]'') and author-year citations (e.g., ``(Rossi et al., 2023)'') are removed.
+    \item \textbf{Section Header Removal:} Structural labels frequently found in scientific abstracts, such as \textit{Abstract}, \textit{Methods}, \textit{Results}, or \textit{Conclusions}, are stripped.
+    \item \textbf{Symbol and Emoji Removal:} Mathematical and scientific symbols (e.g., \textdegree, $\pm$, $\geq$) as well as emoji characters are replaced with spaces.
+    \item \textbf{Social Media Artifact Removal:} Twitter-style mentions (e.g., \texttt{@user}) are removed.
+    \item \textbf{Whitespace Collapsing:} Consecutive whitespace characters are collapsed into a single space and leading or trailing whitespace is trimmed.
+\end{itemize}
+
+This preprocessing step homogenizes the input across the mixed register of the corpus, which spans both formal scientific abstracts and informal social media claims, and produces clean, analyzer-ready text for the later stages of the pipeline.
 
 \subsection{Text Analysis}
 
