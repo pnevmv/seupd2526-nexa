@@ -67,6 +67,7 @@ public class DirectoryIndexer {
                     for (Publication pub : parser) {
                         if (pub != null) {
                             final String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
+                            final String indexingLanguage = resolveIndexingLanguage(detectedLanguage);
                             try {
                                 String textToVectorize = safeString(pub.getTitle()) + " " + safeString(pub.getAbstract());
 
@@ -77,9 +78,9 @@ public class DirectoryIndexer {
                                 System.err.println("Errore vettorizzazione per id: " + pub.getPubkey() + ": " + e.getMessage());
                             }
 
-                            writer.addDocument(pub.toLuceneDocument(detectedLanguage));
+                            writer.addDocument(pub.toLuceneDocument(indexingLanguage));
                             System.out.println("Indexed document: " + count + " with id: " + pub.getPubkey()
-                                    + " [" + detectedLanguage + "]");
+                                    + " [" + indexingLanguage + "]");
                             count++;
                         }
                     }
@@ -145,6 +146,16 @@ public class DirectoryIndexer {
                 new GermanAnalyzer());
 
         return new PerFieldAnalyzerWrapper(new StandardAnalyzer(), fieldAnalyzers);
+    }
+
+    static String resolveIndexingLanguage(final String detectedLanguage) {
+        if (detectedLanguage == null || detectedLanguage.isBlank()) {
+            return LanguageDetectionUtil.ENGLISH;
+        }
+
+        return LanguageDetectionUtil.UNKNOWN.equalsIgnoreCase(detectedLanguage)
+                ? LanguageDetectionUtil.ENGLISH
+                : detectedLanguage.toLowerCase();
     }
 
     private static String safeString(final String value) {
