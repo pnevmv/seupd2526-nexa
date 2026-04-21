@@ -4,6 +4,7 @@ import it.unipd.dei.se.nexa.analyzer.EnglishAnalyzer;
 import it.unipd.dei.se.nexa.analyzer.FrenchAnalyzer;
 import it.unipd.dei.se.nexa.analyzer.GermanAnalyzer;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
+import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
 
@@ -65,8 +66,12 @@ public class DirectoryIndexer {
         int count = 0;
         long start = System.currentTimeMillis();
         Map<String, Integer> languageCounts = createLanguageCounter();
+        final boolean translateNonEnglishToEnglish = TranslationUtil.shouldTranslatePublicationsToEnglish();
+        final String translationTargetLanguage = TranslationUtil.getTranslationTargetLanguage();
 
         System.out.println("Starting the indexing" + docsDir.toAbsolutePath());
+        System.out.println("Translate non-English publications to " + translationTargetLanguage + ": "
+                + translateNonEnglishToEnglish);
 
         try (Stream<Path> stream = Files.walk(docsDir)) {
             for (Path file : (Iterable<Path>) stream.filter(Files::isRegularFile)
@@ -79,8 +84,19 @@ public class DirectoryIndexer {
                     for (Publication pub : parser) {
                         if (isIndexablePublication(pub)) {
                             String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
+                            Publication publicationToIndex = pub;
                             String indexingLanguage = resolveIndexingLanguage(detectedLanguage);
-                            writer.addDocument(pub.toLuceneDocument(indexingLanguage));
+
+                            if (translateNonEnglishToEnglish
+                                    && shouldTranslateToEnglish(indexingLanguage, translationTargetLanguage)) {
+                                publicationToIndex = TranslationUtil.translatePublication(
+                                        pub,
+                                        indexingLanguage,
+                                        translationTargetLanguage);
+                                indexingLanguage = translationTargetLanguage;
+                            }
+
+                            writer.addDocument(publicationToIndex.toLuceneDocument(indexingLanguage));
                             languageCounts.merge(indexingLanguage, 1, Integer::sum);
                             count++;
                             if (count % progressReportInterval == 0) {
@@ -156,13 +172,28 @@ public class DirectoryIndexer {
         return hasTitle || hasAbstract;
     }
 
+    private static boolean shouldTranslateToEnglish(final String sourceLanguage, final String targetLanguage) {
+        return sourceLanguage != null
+                && !sourceLanguage.isBlank()
+                && !LanguageDetectionUtil.UNKNOWN.equalsIgnoreCase(sourceLanguage)
+                && !sourceLanguage.equalsIgnoreCase(targetLanguage);
+    }
+
     public static void main(String[] args) {
-        Path inputDir = Paths.get("C:\\Users\\andre\\OneDrive\\Desktop\\desktop\\SEARCH");//change directory to test
-        Path indexDir = Paths.get("target/lucene-index");
+        if (args.length < 2 || args.length > 3) {
+            System.out.println("Usage: DirectoryIndexer <docsDir> <indexDir> [progressReportInterval]");
+            return;
+        }
+
+        final Path inputDir = Paths.get(args[0]);
+        final Path indexDir = Paths.get(args[1]);
+        final int progressReportInterval = args.length == 3
+                ? Integer.parseInt(args[2])
+                : DEFAULT_PROGRESS_REPORT_INTERVAL;
 
         try {
             System.out.println("DirectoryIndexer...");
-            DirectoryIndexer indexer = new DirectoryIndexer(inputDir, indexDir);
+            DirectoryIndexer indexer = new DirectoryIndexer(inputDir, indexDir, progressReportInterval);
             indexer.index();
         } catch (IOException e) {
             throw new IllegalStateException("Error I/O handle while indexing", e);

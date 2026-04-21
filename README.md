@@ -28,6 +28,38 @@ The repository is organised as follows:
 * `homework-2`: this folder contains the final paper submitted to CLEF.
 * `slides`: this folder contains the slides used for presenting the conducted project.
 
+## Project Structure
+
+```text
+.
+├── pom.xml
+├── src
+│   └── main
+│       ├── config
+│       │   ├── config.yml
+│       │   ├── config_de.yml
+│       │   ├── config_en.yml
+│       │   └── config_fr.yml
+│       ├── java
+│       │   └── it/unipd/dei/se/nexa
+│       │       ├── analyzer
+│       │       │   └── filters
+│       │       ├── index
+│       │       ├── parser
+│       │       ├── tools
+│       │       └── utility
+│       └── resources
+│           ├── de
+│           ├── en
+│           ├── fr
+│           └── langdetect-183.bin
+└── test
+    └── java
+        └── it/unipd/dei/se/nexa
+            ├── analyzer
+            └── parser
+```
+
 ## License
 
 All the contents of this repository are shared using the [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).

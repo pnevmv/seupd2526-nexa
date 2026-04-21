@@ -7,6 +7,7 @@ import it.unipd.dei.se.nexa.analyzer.GermanAnalyzer;
 import it.unipd.dei.se.nexa.parser.Claim;
 import it.unipd.dei.se.nexa.parser.Publication;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
+import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -60,6 +61,11 @@ public class Searcher implements AutoCloseable {
 
     private static final int MAX_TOKENS_FOR_FUZZY = 10;
     private static final int MAX_TOKENS_FOR_PROXIMITY = 12;
+    private static final String BUNDLED_TREC_EVAL = "src/main/java/it/unipd/dei/se/nexa/tools/trec_eval";
+    private static final Path[] TREC_EVAL_CANDIDATES = {
+            Path.of(BUNDLED_TREC_EVAL),
+            Path.of("code").resolve(BUNDLED_TREC_EVAL)
+    };
 
     private final Path claimsPath;
     private final String runId;
@@ -134,6 +140,8 @@ public class Searcher implements AutoCloseable {
         final EvaluationAccumulator evaluationAccumulator = options.evaluateAgainstGold()
                 ? new EvaluationAccumulator()
                 : null;
+        final boolean translateNonEnglishClaimsToEnglish = TranslationUtil.shouldTranslateClaimsToEnglish();
+        final String translationTargetLanguage = TranslationUtil.getTranslationTargetLanguage();
 
         int skippedClaims = 0;
         long totalRunEntries = 0;
@@ -144,6 +152,8 @@ public class Searcher implements AutoCloseable {
         System.out.println("Claims file: " + claimsPath.toAbsolutePath());
         System.out.println("Claims loaded: " + claims.length);
         System.out.println("Dataset language: " + datasetLanguage);
+        System.out.println("Translate non-English claims to " + translationTargetLanguage + ": "
+                + translateNonEnglishClaimsToEnglish);
         System.out.println("Run id: " + runId);
         System.out.println("Run file: " + runFile.toAbsolutePath());
         System.out.println("Qrels file: " + qrelsFile.toAbsolutePath());
@@ -151,8 +161,11 @@ public class Searcher implements AutoCloseable {
 
         for (int i = 0; i < claims.length; i++) {
             final Claim claim = claims[i];
-            final String claimLanguage = resolveClaimLanguage(claim);
-            final Query query = buildQuery(claim, claimLanguage);
+            final PreparedClaim preparedClaim = prepareClaim(
+                    claim,
+                    translateNonEnglishClaimsToEnglish,
+                    translationTargetLanguage);
+            final Query query = buildQuery(preparedClaim.text(), claim.getIndex(), preparedClaim.language());
 
             if (query instanceof MatchNoDocsQuery) {
                 skippedClaims++;
@@ -212,10 +225,12 @@ public class Searcher implements AutoCloseable {
         );
     }
 
-    private Query buildQuery(final Claim claim, final String language) throws IOException {
-        final List<String> originalTokens = analyzeText(claim.getText(), language);
+    private Query buildQuery(final String claimText,
+                             final int claimIndex,
+                             final String language) throws IOException {
+        final List<String> originalTokens = analyzeText(claimText, language);
         if (originalTokens.isEmpty()) {
-            return new MatchNoDocsQuery("No searchable tokens for claim " + claim.getIndex());
+            return new MatchNoDocsQuery("No searchable tokens for claim " + claimIndex);
         }
 
         final Query originalQuery = buildBaseQuery(originalTokens, language);
@@ -507,6 +522,24 @@ public class Searcher implements AutoCloseable {
         return normalizeSearchLanguage(LanguageDetectionUtil.detectLanguage(claim.getText()));
     }
 
+    private PreparedClaim prepareClaim(final Claim claim,
+                                       final boolean translateNonEnglishClaimsToEnglish,
+                                       final String translationTargetLanguage) {
+        final String claimLanguage = resolveClaimLanguage(claim);
+        if (!translateNonEnglishClaimsToEnglish
+                || claimLanguage == null
+                || claimLanguage.isBlank()
+                || LanguageDetectionUtil.UNKNOWN.equalsIgnoreCase(claimLanguage)
+                || claimLanguage.equalsIgnoreCase(translationTargetLanguage)) {
+            return new PreparedClaim(claim.getText(), claimLanguage);
+        }
+
+        return new PreparedClaim(
+                TranslationUtil.translateClaimText(claim.getText(), claimLanguage, translationTargetLanguage),
+                translationTargetLanguage
+        );
+    }
+
     private static String detectDatasetLanguage(final Path claimsPath) {
         final String fileName = claimsPath.getFileName().toString().toLowerCase(Locale.ROOT);
         if (fileName.startsWith(LanguageDetectionUtil.ENGLISH + "_")) {
@@ -539,8 +572,11 @@ public class Searcher implements AutoCloseable {
     }
 
     private static Path resolveTrecEvalExecutable(final String configuredExecutable) {
-        if (configuredExecutable == null || configuredExecutable.isBlank()) {
-            return findExecutableOnPath("it/unipd/dei/se/nexa/tools/trec_eval");
+        if (configuredExecutable == null
+                || configuredExecutable.isBlank()
+                || "it/unipd/dei/se/nexa/tools/trec_eval".equals(configuredExecutable)
+                || BUNDLED_TREC_EVAL.equals(configuredExecutable)) {
+            return findBundledTrecEvalExecutable();
         }
 
         final Path configuredPath = Path.of(configuredExecutable);
@@ -552,6 +588,16 @@ public class Searcher implements AutoCloseable {
         }
 
         return findExecutableOnPath(configuredExecutable);
+    }
+
+    private static Path findBundledTrecEvalExecutable() {
+        for (Path candidate : TREC_EVAL_CANDIDATES) {
+            if (Files.isRegularFile(candidate) && Files.isExecutable(candidate)) {
+                return candidate;
+            }
+        }
+
+        return findExecutableOnPath("trec_eval");
     }
 
     private static Path findExecutableOnPath(final String executableName) {
@@ -676,7 +722,7 @@ public class Searcher implements AutoCloseable {
                 throw new IllegalArgumentException("Fuzzy max edits must be in the range [0, 2].");
             }
             if (trecEvalExecutable == null || trecEvalExecutable.isBlank()) {
-                trecEvalExecutable = "it/unipd/dei/se/nexa/tools/trec_eval";
+                trecEvalExecutable = BUNDLED_TREC_EVAL;
             }
         }
 
@@ -698,7 +744,7 @@ public class Searcher implements AutoCloseable {
                     1.0f,
                     true,
                     true,
-                    "it/unipd/dei/se/nexa/tools/trec_eval"
+                    BUNDLED_TREC_EVAL
             );
         }
 
@@ -748,6 +794,9 @@ public class Searcher implements AutoCloseable {
     }
 
     private record ClaimSearchOutcome(long writtenEntries, int relevantRank) {
+    }
+
+    private record PreparedClaim(String text, String language) {
     }
 
     private static final class EvaluationAccumulator {

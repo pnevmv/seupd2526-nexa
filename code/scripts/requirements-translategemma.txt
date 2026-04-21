@@ -1,0 +1,5 @@
+Pillow
+protobuf
+torch
+transformers
+sentencepiece
