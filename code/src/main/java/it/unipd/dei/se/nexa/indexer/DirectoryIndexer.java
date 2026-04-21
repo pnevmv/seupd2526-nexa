@@ -9,6 +9,7 @@ import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
 import it.unipd.dei.se.nexa.utility.ConfigManager;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
+import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -53,8 +54,12 @@ public class DirectoryIndexer {
     public void index() throws IOException {
         int count = 0;
         long start = System.currentTimeMillis();
+        final boolean translateNonEnglishToEnglish = TranslationUtil.shouldTranslatePublicationsToEnglish();
+        final String translationTargetLanguage = TranslationUtil.getTranslationTargetLanguage();
 
         System.out.println("Starting the indexing" + docsDir.toAbsolutePath());
+        System.out.println("Translate non-English publications to " + translationTargetLanguage + ": "
+                + translateNonEnglishToEnglish);
 
         try (Stream<Path> stream = Files.walk(docsDir)) {
             for (Path file : (Iterable<Path>) stream.filter(Files::isRegularFile)
@@ -65,21 +70,34 @@ public class DirectoryIndexer {
                     JsonParser parser = new JsonParser(reader);
 
                     for (Publication pub : parser) {
-                        if (pub != null) {
+                        if (isIndexablePublication(pub)) {
                             final String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
-                            final String indexingLanguage = resolveIndexingLanguage(detectedLanguage);
-                            try {
-                                String textToVectorize = safeString(pub.getTitle()) + " " + safeString(pub.getAbstract());
+                            String indexingLanguage = resolveIndexingLanguage(detectedLanguage);
+                            Publication publicationToIndex = pub;
 
-                                float[] vector = getVector(textToVectorize);
-                                pub.setEmbedding(vector);
-
-                            } catch (Exception e) {
-                                System.err.println("Errore vettorizzazione per id: " + pub.getPubkey() + ": " + e.getMessage());
+                            if (translateNonEnglishToEnglish
+                                    && shouldTranslateToTargetLanguage(indexingLanguage, translationTargetLanguage)) {
+                                publicationToIndex = TranslationUtil.translatePublication(
+                                        pub,
+                                        indexingLanguage,
+                                        translationTargetLanguage);
+                                indexingLanguage = translationTargetLanguage;
                             }
 
-                            writer.addDocument(pub.toLuceneDocument(indexingLanguage));
-                            System.out.println("Indexed document: " + count + " with id: " + pub.getPubkey()
+                            try {
+                                String textToVectorize = safeString(publicationToIndex.getTitle()) + " "
+                                        + safeString(publicationToIndex.getAbstract());
+
+                                float[] vector = getVector(textToVectorize);
+                                publicationToIndex.setEmbedding(vector);
+
+                            } catch (Exception e) {
+                                System.err.println("Errore vettorizzazione per id: "
+                                        + publicationToIndex.getPubkey() + ": " + e.getMessage());
+                            }
+
+                            writer.addDocument(publicationToIndex.toLuceneDocument(indexingLanguage));
+                            System.out.println("Indexed document: " + count + " with id: " + publicationToIndex.getPubkey()
                                     + " [" + indexingLanguage + "]");
                             count++;
                         }
@@ -160,6 +178,27 @@ public class DirectoryIndexer {
 
     private static String safeString(final String value) {
         return value == null ? "" : value;
+    }
+
+    private static boolean isIndexablePublication(final Publication publication) {
+        if (publication == null) {
+            return false;
+        }
+
+        final String title = publication.getTitle();
+        final String abstractText = publication.getAbstract();
+
+        final boolean hasTitle = title != null && !title.isBlank();
+        final boolean hasAbstract = abstractText != null && !abstractText.isBlank() && !"#".equals(abstractText);
+
+        return hasTitle || hasAbstract;
+    }
+
+    private static boolean shouldTranslateToTargetLanguage(final String sourceLanguage, final String targetLanguage) {
+        return sourceLanguage != null
+                && !sourceLanguage.isBlank()
+                && !LanguageDetectionUtil.UNKNOWN.equalsIgnoreCase(sourceLanguage)
+                && !sourceLanguage.equalsIgnoreCase(targetLanguage);
     }
 
 

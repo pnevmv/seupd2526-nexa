@@ -41,6 +41,10 @@ public abstract class CommonParser implements Iterator<Publication>, Iterable<Pu
         return input;
     }
 
+    public static String cleanScientificText(String input) {
+        return cleanText(input);
+    }
+
     /**
      * Indicates whether there is another Publication to return.
      */

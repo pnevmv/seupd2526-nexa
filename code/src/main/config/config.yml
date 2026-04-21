@@ -6,6 +6,25 @@ maxTokens: 50
 #shared language detector model used to route publications to the matching analyzer
 languageDetectorModel: langdetect-183.bin
 
+# translate non-English publications to English before indexing them with the English analyzer
+translateNonEnglishPublicationsToEnglish: false
+
+# translate non-English claims to English before querying the translated-English index
+translateNonEnglishClaimsToEnglish: false
+
+# translation backend. Supported values: none, command, gemma
+translationProvider: gemma
+
+# target language for translated text. Keep this as en for the English-only experiment
+translationTargetLanguage: en
+
+# executable or script that reads UTF-8 text from stdin and prints the translated text to stdout.
+# it is called as: <translationCommand> <sourceLang> <targetLang>
+translationCommand:
+
+# local TranslateGemma service endpoint, e.g. http://127.0.0.1:8008/translate
+translationServiceUrl: http://127.0.0.1:8008/translate
+
 #use correct spelling: select true if you want to use it, false otherwise
 correctSpelling: false
 
@@ -41,15 +60,6 @@ numOfDocsToRetrieveForPrf: 5
 
 #number of prf terms we want to generate
 numOfTokenFromPrf: 4
-
-#use API for query expansion: select true if you want to use it, false otherwise
-useLLMExpansion: false
-
-#number of LLM terms we want to generate
-numOfTokenFromLLM: 4
-
-#url used for LLM API request:
-llmServiceUrl: https://api.openai.com/v1/chat/completions
 
 #use the reRank: select true if you want to use it, false otherwise
 reRank: false
