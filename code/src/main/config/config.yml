@@ -3,6 +3,9 @@
 #use only the first n topics of a query
 maxTokens: 50
 
+#shared language detector model used to route publications to the matching analyzer
+languageDetectorModel: langdetect-183.bin
+
 #use correct spelling: select true if you want to use it, false otherwise
 correctSpelling: false
 

@@ -32,6 +32,7 @@ import org.apache.lucene.util.CharsRefBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import it.unipd.dei.se.nexa.utility.ConfigManager;
+import opennlp.tools.langdetect.LanguageDetectorModel;
 import opennlp.tools.lemmatizer.LemmatizerModel;
 import opennlp.tools.postag.POSModel;
 import opennlp.tools.sentdetect.SentenceModel;
@@ -230,6 +231,32 @@ public class AnalyzerUtil {
         }
 
         return model;
+    }
+
+    /**
+     * Loads the required Apache OpenNLP language detector model among those
+     * available in the {@code resources} folder.
+     *
+     * @param globalConfig global configuration containing the language detector model path.
+     * @return the required Apache OpenNLP model.
+     */
+    public static LanguageDetectorModel loadLanguageDetectorModel(@NotNull final ConfigManager globalConfig) {
+
+        String modelFile = globalConfig.getString("languageDetectorModel");
+
+        if (modelFile == null)
+            throw new NullPointerException("Language detector model file name cannot be null.");
+
+        if (modelFile.isEmpty())
+            throw new IllegalArgumentException("Language detector model file name cannot be empty.");
+
+        try (InputStream in = Files.newInputStream(resolveResourcePath(modelFile))) {
+            return new LanguageDetectorModel(in);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    String.format("Unable to load the language detector model %s: %s", modelFile, e.getMessage()),
+                    e);
+        }
     }
 
     public static Map<String, String> getAbbreviationMap(String language) {

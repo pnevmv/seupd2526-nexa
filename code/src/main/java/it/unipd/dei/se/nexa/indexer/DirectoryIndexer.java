@@ -2,11 +2,15 @@ package it.unipd.dei.se.nexa.indexer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.unipd.dei.se.nexa.analyzer.EnglishAnalyzer;
+import it.unipd.dei.se.nexa.analyzer.FrenchAnalyzer;
+import it.unipd.dei.se.nexa.analyzer.GermanAnalyzer;
 import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
-
 import it.unipd.dei.se.nexa.utility.ConfigManager;
+import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -20,6 +24,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.*;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -61,8 +66,9 @@ public class DirectoryIndexer {
 
                     for (Publication pub : parser) {
                         if (pub != null) {
+                            final String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
                             try {
-                                String textToVectorize = pub.getTitle() + " " + pub.getAbstract();
+                                String textToVectorize = safeString(pub.getTitle()) + " " + safeString(pub.getAbstract());
 
                                 float[] vector = getVector(textToVectorize);
                                 pub.setEmbedding(vector);
@@ -71,8 +77,9 @@ public class DirectoryIndexer {
                                 System.err.println("Errore vettorizzazione per id: " + pub.getPubkey() + ": " + e.getMessage());
                             }
 
-                            writer.addDocument(pub.toLuceneDocument());
-                            System.out.println("Indexed document: " + count + " with id: " + pub.getPubkey());
+                            writer.addDocument(pub.toLuceneDocument(detectedLanguage));
+                            System.out.println("Indexed document: " + count + " with id: " + pub.getPubkey()
+                                    + " [" + detectedLanguage + "]");
                             count++;
                         }
                     }
@@ -119,13 +126,52 @@ public class DirectoryIndexer {
         return vector;
     }
 
+    private static Analyzer buildLanguageAwareAnalyzer() {
+        Map<String, Analyzer> fieldAnalyzers = new LinkedHashMap<>();
+
+        fieldAnalyzers.put(Publication.getLocalizedFieldName(Publication.FIELD_TITLE, LanguageDetectionUtil.ENGLISH),
+                new EnglishAnalyzer());
+        fieldAnalyzers.put(Publication.getLocalizedFieldName(Publication.FIELD_ABSTRACT, LanguageDetectionUtil.ENGLISH),
+                new EnglishAnalyzer());
+
+        fieldAnalyzers.put(Publication.getLocalizedFieldName(Publication.FIELD_TITLE, LanguageDetectionUtil.FRENCH),
+                new FrenchAnalyzer());
+        fieldAnalyzers.put(Publication.getLocalizedFieldName(Publication.FIELD_ABSTRACT, LanguageDetectionUtil.FRENCH),
+                new FrenchAnalyzer());
+
+        fieldAnalyzers.put(Publication.getLocalizedFieldName(Publication.FIELD_TITLE, LanguageDetectionUtil.GERMAN),
+                new GermanAnalyzer());
+        fieldAnalyzers.put(Publication.getLocalizedFieldName(Publication.FIELD_ABSTRACT, LanguageDetectionUtil.GERMAN),
+                new GermanAnalyzer());
+
+        return new PerFieldAnalyzerWrapper(new StandardAnalyzer(), fieldAnalyzers);
+    }
+
+    private static String safeString(final String value) {
+        return value == null ? "" : value;
+    }
+
 
     public static void main(String[] args) {
-        Path inputDir = Paths.get("/Volumes/KINGSTON/collection_data.json");//change directory to test
+        final Path inputPath;
+        if (args.length >= 1) {
+            inputPath = Paths.get(args[0]);
+        } else {
+            final String configuredCollectionPath = config.getString("collectionPath");
+            if (configuredCollectionPath == null || configuredCollectionPath.isBlank()) {
+                System.out.println("Usage: DirectoryIndexer <collectionJsonOrDir> [indexDir]");
+                return;
+            }
+            inputPath = Paths.get(configuredCollectionPath);
+        }
 
-        try (Analyzer analyzer = new StandardAnalyzer()) {
+        final Path indexPath = args.length >= 2
+                ? Paths.get(args[1])
+                : Path.of(config.getString("indexPath"));
+
+        try (Analyzer analyzer = buildLanguageAwareAnalyzer()) {
             System.out.println("DirectoryIndexer...");
-            DirectoryIndexer indexer = new DirectoryIndexer(inputDir, Path.of(config.getString("indexPath")), analyzer);
+            DirectoryIndexer indexer = new DirectoryIndexer(inputPath, indexPath, analyzer);
             indexer.index();
         } catch (IOException e) {
             throw new IllegalStateException("Error I/O handle while indexing", e);
