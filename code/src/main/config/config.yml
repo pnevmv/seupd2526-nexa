@@ -1,94 +1,62 @@
-# ------------------------------------------ SEARCHER ------------------------------------------------------------------
+# global config. per-language analyzer settings in config_<lang>.yml
 
-#use only the first n topics of a query
-maxTokens: 50
+# --- indexing ---
 
-#shared language detector model used to route publications to the matching analyzer
-languageDetectorModel: langdetect-183.bin
-
-# translate non-English publications to English before indexing them with the English analyzer
-translateNonEnglishPublicationsToEnglish: false
-
-# translate non-English claims to English before querying the translated-English index
-translateNonEnglishClaimsToEnglish: false
-
-# translation backend. Supported values: none, command, gemma
-translationProvider: gemma
-
-# target language for translated text. Keep this as en for the English-only experiment
-translationTargetLanguage: en
-
-# executable or script that reads UTF-8 text from stdin and prints the translated text to stdout.
-# it is called as: <translationCommand> <sourceLang> <targetLang>
-translationCommand:
-
-# local TranslateGemma service endpoint, e.g. http://127.0.0.1:8008/translate
-translationServiceUrl: http://127.0.0.1:8008/translate
-
-#use correct spelling: select true if you want to use it, false otherwise
-correctSpelling: false
-
-#use dictionary to check the query: select true if you want to use it, false otherwise
-dictionary: false
-
-#use the start of the document: select true if you want to use it, false otherwise
-start: false
-
-#use the highlights of the document: select true if you want to use it, false otherwise
-highlight: false
-
-#use the Ngrams: select true if you want to use it, false otherwise
-nGrams: false
-
-#use the Synonyms: select true if you want to use it, false otherwise
-synonyms: false
-
-#use the Fuzzy: select true if you want to use it, false otherwise
-fuzzy: false
-
-#use the phrase: select true if you want to use it, false otherwise
-phrase: false
-
-#use the word2Vec query expansion: select true if you want to use it, false otherwise
-useWord2Vec: false
-
-#use the prf: select true if you want to use it, false otherwise
-prf: false
-
-#number of docs retrieved for prf
-numOfDocsToRetrieveForPrf: 5
-
-#number of prf terms we want to generate
-numOfTokenFromPrf: 4
-
-#use the reRank: select true if you want to use it, false otherwise
-reRank: false
-
-#reranker service [Local, Cohere]
-reRankEndPoint: Local
-
-#use the heuristic version of reRank: select true if you want to use it, false otherwise
-reRankHeuristic: false
-
-# number of documents we want to rerank
-numOfDocsToRerank: 100
-
-# ------------------------------------------ RUNS SET UP ---------------------------------------------------------------
-
-#path to the collection
-collectionPath:
-
-#path to the topics file (queries)
-topics:
-
-# path to the index
+collectionPath: code/datasets/collection_data.json
 indexPath: "code/experiment/index"
 
-# name of the run
-runID:
+# resolved relative to repo root or code/
+languageDetectorModel: src/main/resources/langdetect-183.bin
 
-# path of the directory of the runs
+# BERT embeddings for each publication. needs a service at embeddingsServiceUrl.
+# off by default since the baseline searcher doesn't use pub_vector.
+embeddingsEnabled: false
+embeddingsServiceUrl: http://localhost:8080/process
+
+# --- translation ---
+
+translateNonEnglishPublicationsToEnglish: false
+translateNonEnglishClaimsToEnglish: false
+
+# provider: none | command | gemma
+translationProvider: gemma
+translationTargetLanguage: en
+
+# used when provider=command. called as: <cmd> <sourceLang> <targetLang>
+translationCommand:
+
+# used when provider=gemma
+translationServiceUrl: http://127.0.0.1:8008/translate
+
+# --- searching ---
+
+# claims JSON: array of {index, text, pubkey?}
+topics: code/datasets/en_train.json
+
+# runID doubles as the output filename
+runID: nexa-baseline
 runPath: runs
 
-#number of docs to retrieve
 maxDocsRetrieved: 1000
+
+# --- reserved ---
+# leftovers from the LongEval pipeline. kept as placeholders so we know the
+# key names; uncomment + wire up when we need them.
+#
+# maxTokens: 50
+# correctSpelling: false
+# dictionary: false
+# start: false
+# highlight: false
+# nGrams: false
+# synonyms: false
+# fuzzy: false
+# phrase: false
+# useWord2Vec: false
+# prf: false
+# numOfDocsToRetrieveForPrf: 5
+# numOfTokenFromPrf: 4
+# reRank: false
+# reRankEndPoint: Local
+# reRankHeuristic: false
+# numOfDocsToRerank: 100
