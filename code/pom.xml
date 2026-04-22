@@ -50,22 +50,26 @@
 				</configuration>
 			</plugin>
 
-			<!-- generates jar files including any dependencies -->
+			<!-- generates an uber-jar including all dependencies. Uses shade
+			     instead of assembly so Lucene's SPI service files under
+			     META-INF/services/ get merged rather than overwritten. -->
 			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.8.0</version>
-				<configuration>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.5.3</version>
 				<executions>
 					<execution>
-						<id>make-assembly</id>
 						<phase>package</phase>
 						<goals>
-							<goal>single</goal>
+							<goal>shade</goal>
 						</goals>
+						<configuration>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+							</transformers>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

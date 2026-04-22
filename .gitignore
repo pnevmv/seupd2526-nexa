@@ -79,3 +79,12 @@ datasets/
 .DS_Store
 
 code/experiment/
+
+# IDE
+.vscode/
+
+# Maven shade plugin byproduct
+dependency-reduced-pom.xml
+
+# TREC run outputs (regenerable, can be hundreds of MB)
+runs/
