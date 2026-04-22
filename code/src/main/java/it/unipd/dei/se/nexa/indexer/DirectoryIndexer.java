@@ -56,10 +56,14 @@ public class DirectoryIndexer {
         long start = System.currentTimeMillis();
         final boolean translateNonEnglishToEnglish = TranslationUtil.shouldTranslatePublicationsToEnglish();
         final String translationTargetLanguage = TranslationUtil.getTranslationTargetLanguage();
+        final boolean embeddingsEnabled = Boolean.TRUE.equals(config.getBool("embeddingsEnabled"));
+        final String embeddingsServiceUrl = config.getString("embeddingsServiceUrl");
 
         System.out.println("Starting the indexing" + docsDir.toAbsolutePath());
         System.out.println("Translate non-English publications to " + translationTargetLanguage + ": "
                 + translateNonEnglishToEnglish);
+        System.out.println("BERT embeddings enabled: " + embeddingsEnabled
+                + (embeddingsEnabled ? " (" + embeddingsServiceUrl + ")" : ""));
 
         try (Stream<Path> stream = Files.walk(docsDir)) {
             for (Path file : (Iterable<Path>) stream.filter(Files::isRegularFile)
@@ -84,16 +88,18 @@ public class DirectoryIndexer {
                                 indexingLanguage = translationTargetLanguage;
                             }
 
-                            try {
-                                String textToVectorize = safeString(publicationToIndex.getTitle()) + " "
-                                        + safeString(publicationToIndex.getAbstract());
+                            if (embeddingsEnabled) {
+                                try {
+                                    String textToVectorize = safeString(publicationToIndex.getTitle()) + " "
+                                            + safeString(publicationToIndex.getAbstract());
 
-                                float[] vector = getVector(textToVectorize);
-                                publicationToIndex.setEmbedding(vector);
+                                    float[] vector = getVector(textToVectorize, embeddingsServiceUrl);
+                                    publicationToIndex.setEmbedding(vector);
 
-                            } catch (Exception e) {
-                                System.err.println("Errore vettorizzazione per id: "
-                                        + publicationToIndex.getPubkey() + ": " + e.getMessage());
+                                } catch (Exception e) {
+                                    System.err.println("Errore vettorizzazione per id: "
+                                            + publicationToIndex.getPubkey() + ": " + e.getMessage());
+                                }
                             }
 
                             writer.addDocument(publicationToIndex.toLuceneDocument(indexingLanguage));
@@ -115,7 +121,7 @@ public class DirectoryIndexer {
         System.out.printf("\nIndexing complete. %d documents in target in %d ms.%n", count, (end - start));
     }
 
-    private float[] getVector(String text) throws Exception {
+    private float[] getVector(String text, String serviceUrl) throws Exception {
 
         HttpClient client = HttpClient.newHttpClient();
         ObjectMapper mapper = new ObjectMapper();
@@ -124,7 +130,7 @@ public class DirectoryIndexer {
         String jsonBody = mapper.writeValueAsString(payload);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/process"))
+                .uri(URI.create(serviceUrl))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
