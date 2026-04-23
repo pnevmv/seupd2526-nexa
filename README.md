@@ -34,30 +34,69 @@ The multilingual translation pipeline uses a local Python server that exposes
 `google/translategemma-4b-it` through an HTTP endpoint consumed by the Java code.
 
 From the `code` directory, create the virtual environment and install the
-required packages:
+required packages.
+
+macOS/Linux:
 
 ```bash
 cd code
 python3 -m venv scripts/.venv
-scripts/.venv/bin/pip install -r scripts/requirements-translategemma.txt
+scripts/.venv/bin/python3 -m pip install -r scripts/requirements-translategemma.txt
 ```
 
-Create the local environment file from the example and set your Hugging Face token:
+Windows PowerShell:
+
+```powershell
+cd code
+py -3 -m venv scripts\.venv
+.\scripts\.venv\Scripts\python.exe -m pip install -r scripts\requirements-translategemma.txt
+```
+
+If the `py` launcher is not available on Windows, use `python` instead.
+
+Create the local environment file from the example and set your Hugging Face
+token in it.
+
+macOS/Linux:
 
 ```bash
 cp scripts/translategemma.env.example scripts/translategemma.env
 ```
 
+Windows PowerShell:
+
+```powershell
+Copy-Item .\scripts\translategemma.env.example .\scripts\translategemma.env
+notepad .\scripts\translategemma.env
+```
+
 Then start the translation server:
+
+macOS/Linux:
 
 ```bash
 ./scripts/run_translategemma_server.sh
 ```
 
+Windows PowerShell:
+
+```powershell
+$env:HF_TOKEN = ((Get-Content .\scripts\translategemma.env | Where-Object { $_ -match '^HF_TOKEN=' } | Select-Object -First 1) -split '=', 2)[1]
+.\scripts\.venv\Scripts\python.exe .\scripts\translategemma_server.py
+```
+
 The server listens on `http://127.0.0.1:8008` by default. A quick health check is:
+
+macOS/Linux:
 
 ```bash
 curl http://127.0.0.1:8008/health
+```
+
+Windows PowerShell:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8008/health
 ```
 
 The Java pipeline uses the settings in `code/src/main/config/config.yml`.
