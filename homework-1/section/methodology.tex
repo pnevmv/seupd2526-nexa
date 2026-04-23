@@ -124,3 +124,34 @@ The indexing procedure follows a well-defined sequence of steps. First, the syst
 Once all documents have been processed, the index is finalized by committing changes and closing the writer.
 
 This modular and extensible design allows the indexing system to integrate multiple preprocessing strategies, multilingual handling, and semantic enrichment, while keeping the core indexing logic independent and reusable.
+
+\subsection{Searching}
+
+The retrieval phase is responsible for matching input claims with relevant scientific publications stored in the indexed collection. This component is implemented through the \texttt{Searcher} class, which performs query processing, executes search operations over the Lucene index, and outputs ranked results.
+
+The system initializes a Lucene \texttt{IndexSearcher} over the indexed data and employs the BM25 similarity function for ranking. Queries are provided as a collection of claims stored in JSON format, where each claim represents a short textual statement that must be linked to relevant documents.
+
+\subsubsection{Query Formulation}
+
+Each claim is processed independently. The textual content is first transformed into a structured query using a \texttt{QueryBuilder}, which applies the same analyzer used during indexing. This ensures that both documents and queries undergo consistent preprocessing, reducing mismatches due to tokenization or normalization.
+
+The resulting terms are used to construct field-specific queries targeting different parts of the indexed documents.
+
+\subsubsection{Structured Boolean Queries}
+
+Instead of relying on a single-field representation, the system generates separate subqueries for the title and abstract fields of each document.
+
+These subqueries are combined using a Boolean query with \texttt{SHOULD} clauses, allowing documents to be retrieved if they match either field. This formulation increases recall while maintaining flexibility in matching.
+
+To further refine the ranking, different importance weights are assigned to each field through boosting. In particular, matches occurring in the title field are given higher importance than those in the abstract. This results in a weighted query structure that prioritizes concise and informative matches while still considering broader contextual information.
+
+\subsubsection{Ranking Mechanism}
+
+Once the Boolean query is constructed, it is executed using the Lucene search engine. The system retrieves the top-$k$ documents according to their BM25 scores. This ranking function considers the frequency of query terms, their rarity across the collection, and document length normalization.
+
+The number of retrieved documents is configurable and can be adjusted depending on the evaluation setup.
+
+\subsubsection{Result Formatting}
+
+The retrieved results are written to an output file following the TREC evaluation format. Each entry includes the query identifier, document identifier, rank position, score, and run identifier. This standardized format ensures compatibility with external evaluation tools commonly used in information retrieval benchmarks.
+
