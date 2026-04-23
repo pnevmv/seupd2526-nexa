@@ -3,6 +3,14 @@
 
 In this section, we describe the architecture and components of our system. Our approach follows a multi-stage Information Retrieval pipeline combining traditional lexical matching with semantic representations.
 
+\subsection{System Configurability}
+
+\subsection{Document Parsing}
+
+\subsection{Query Parsing}
+
+\subsection{Query Expansion}
+
 \subsection{Text Analysis}
 
 The text analysis phase transforms raw textual input into a stream of tokens that can be indexed and later retrieved. The analysis is performed through language-specific analyzer classes, which extend the Apache Lucene \texttt{Analyzer} framework. In our system, we provide separate analyzers for each supported language, namely \texttt{EnglishAnalyzer}, \texttt{FrenchAnalyzer}, and \texttt{GermanAnalyzer}. Each analyzer is configured using language-dependent resources and processing pipelines.
@@ -125,7 +133,7 @@ Once all documents have been processed, the index is finalized by committing cha
 
 This modular and extensible design allows the indexing system to integrate multiple preprocessing strategies, multilingual handling, and semantic enrichment, while keeping the core indexing logic independent and reusable.
 
-\subsection{Searching}
+\subsection{Retrieval Phase}
 
 The retrieval phase is responsible for matching input claims with relevant scientific publications stored in the indexed collection. This component is implemented through the \texttt{Searcher} class, which performs query processing, executes search operations over the Lucene index, and outputs ranked results.
 
