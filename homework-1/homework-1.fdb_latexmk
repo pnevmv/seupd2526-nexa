@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex homework-1"] 1776907671.58993 "homework-1.aux" "homework-1.bbl" "homework-1" 1776907679.91509 0
+["bibtex homework-1"] 1776908653.30743 "homework-1.aux" "homework-1.bbl" "homework-1" 1776908665.05515 0
   "./bibliography.bib" 1774978759 855883 aa81daa5b29d2d28809eb1a6d43a0c71 ""
   "./proceedings.bib" 1774978759 203316 9f8f11a569ca106abe92744ef504ba38 ""
   "C:/Users/Bita/AppData/Local/Programs/MiKTeX/bibtex/bst/elsarticle/elsarticle-num-names.bst" 1768130249 28896 ef8ea1833e4d69d9f60b6db23b4bea61 ""
-  "homework-1.aux" 1776907676 38064 3dbf402c1f46da4c2a8b5c0cf78bf889 "pdflatex"
+  "homework-1.aux" 1776908661 38063 a1dda2214c9910c3f267f9b76ce325b2 "pdflatex"
   (generated)
   "homework-1.bbl"
   "homework-1.blg"
   (rewritten before read)
-["pdflatex"] 1776907672.47896 "d:/SE/NEXA/seupd2526-nexa/homework-1/homework-1.tex" "homework-1.pdf" "homework-1" 1776907679.91766 0
+["pdflatex"] 1776908654.35373 "d:/SE/NEXA/seupd2526-nexa/homework-1/homework-1.tex" "homework-1.pdf" "homework-1" 1776908665.05695 0
   "C:/Users/Bita/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1776633857 185675 ef24d5c1517c20c4af7b584d190bf69f ""
   "C:/Users/Bita/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1776873633 13349829 9cf2a4f8ed09041b843707297996d52c ""
   "C:/Users/Bita/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/fontawesome5/fa5free1.enc" 1651500229 3042 0e2b14b9be7d01075a4c4591d5d1781b ""
@@ -235,16 +235,16 @@
   "ceurart.cls" 1774978759 87764 2c6f7928cfcf4525d25a7760fec1fcc1 ""
   "d:/SE/NEXA/seupd2526-nexa/homework-1/homework-1.tex" 1776872736 5044 363b5e3a14669b017f6a0db2f51ac30e ""
   "figure/sample.pdf" 1774978759 119292 44678202b8d0edc3df83fdcff7e05c5a ""
-  "homework-1.abs" 1776907675 686 789b2c072a25fce6280f8c1d4574fe6b "pdflatex"
-  "homework-1.aux" 1776907676 38064 3dbf402c1f46da4c2a8b5c0cf78bf889 "pdflatex"
-  "homework-1.bbl" 1776907672 814 146e85247f0ae080cc4e2d91a5c07598 "bibtex homework-1"
+  "homework-1.abs" 1776908659 686 789b2c072a25fce6280f8c1d4574fe6b "pdflatex"
+  "homework-1.aux" 1776908661 38063 a1dda2214c9910c3f267f9b76ce325b2 "pdflatex"
+  "homework-1.bbl" 1776908654 814 146e85247f0ae080cc4e2d91a5c07598 "bibtex homework-1"
   "homework-1.tex" 1776872736 5044 363b5e3a14669b017f6a0db2f51ac30e ""
-  "homework-1.xmpdata" 1776907676 627 a77608edfed9446193e677d5c40d13db "pdflatex"
-  "pdfa.xmpi" 1776907674 6953 dfc375d75d01046cd96d6c3e7c784bb1 "pdflatex"
+  "homework-1.xmpdata" 1776908661 627 a77608edfed9446193e677d5c40d13db "pdflatex"
+  "pdfa.xmpi" 1776908658 6953 9a939ee7783f84d683c871ea8ebaede9 "pdflatex"
   "section/conclusion.tex" 1774978759 235 40f625c50f8dcaf575f276178acc2d0f ""
   "section/contributions.tex" 1774978759 2946 dcee18ac4a5046284ba8bd9c2f65ce35 ""
   "section/introduction.tex" 1776872736 1511 f0977441e7b666f4d1d5a4b6e10d38ec ""
-  "section/methodology.tex" 1776907663 11881 2ee1098ff83f2a7fe6b40ad9fe775ca8 ""
+  "section/methodology.tex" 1776908639 11879 f4df6023d295c36fdf93ab1e0552376b ""
   "section/results.tex" 1774978759 171 d61916f82f688cf3ed1c7206238d22e8 ""
   "section/setup.tex" 1774978759 274 66bf465800767546599feb0790c3e5f5 ""
   (generated)
