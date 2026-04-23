@@ -39,6 +39,7 @@
 *.synctex.gz
 *.bbl
 *.blg
+homework-*/build/
 
 # Matlab
 *.m~
