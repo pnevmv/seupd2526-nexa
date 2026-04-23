@@ -86,3 +86,41 @@ This design allows the system to handle multilingual corpora effectively, as eac
 
 
 Overall, the integration of language-specific analyzers, configurable processing pipelines, and rich linguistic resources allows the system to effectively bridge the gap between informal social media text and formal scientific documents, improving the quality of retrieval.
+
+\subsection{Document Indexing}
+
+The document indexing stage transforms processed publications into a searchable inverted index using Apache Lucene. This structure enables efficient retrieval of relevant documents during the query phase. In our system, indexing is handled by the \texttt{DirectoryIndexer} component, which coordinates parsing, preprocessing, and storage of documents.
+
+\subsubsection{Indexing Workflow}
+
+The indexing workflow operates over a collection of JSON files containing scientific publications. Each file is parsed to extract individual documents, represented internally as structured \texttt{Publication} objects. Only documents containing meaningful textual content (such as title or abstract) are considered for indexing.
+
+A key aspect of the system is its multilingual processing capability. For each publication, the language is automatically detected, and an appropriate language-specific analyzer is applied. Separate analyzers are used for English, French, and German, each configured with its own tokenization and filtering pipeline.
+
+In addition to standard preprocessing, the system supports optional enhancements. When enabled, documents written in languages different from the target language can be translated prior to indexing. Moreover, the system can generate dense vector representations of the textual content by interacting with an external embedding service. These embeddings are stored alongside the indexed documents to support future semantic retrieval extensions.
+
+Each processed publication is converted into a Lucene \texttt{Document} and added to the index using an \texttt{IndexWriter}. During this process, statistics such as the number of indexed documents and total indexing time are recorded.
+
+\subsubsection{Field Representation}
+
+Document content is stored in structured fields, such as title and abstract, each processed using the appropriate analyzer based on the detected language. A custom field type is defined to support advanced indexing features, including term frequencies, positional information, and character offsets.
+
+The system also enables storage of term vectors, which allows more advanced retrieval functionalities such as phrase matching, proximity queries, and potential re-ranking strategies. Additionally, the original textual content can be stored in the index to support downstream processing steps.
+
+\subsubsection{Processing Pipeline}
+
+The indexing procedure follows a well-defined sequence of steps. First, the system initializes the index writer with the configured analyzer and output directory. Then, for each document, the following operations are performed:
+
+\begin{itemize}
+    \item Parsing the input file into structured publication objects
+    \item Filtering out incomplete or invalid entries
+    \item Detecting the language of the document
+    \item Applying optional translation if required
+    \item Generating semantic embeddings (if enabled)
+    \item Converting the document into a Lucene-compatible format
+    \item Adding the document to the index
+\end{itemize}
+
+Once all documents have been processed, the index is finalized by committing changes and closing the writer.
+
+This modular and extensible design allows the indexing system to integrate multiple preprocessing strategies, multilingual handling, and semantic enrichment, while keeping the core indexing logic independent and reusable.
