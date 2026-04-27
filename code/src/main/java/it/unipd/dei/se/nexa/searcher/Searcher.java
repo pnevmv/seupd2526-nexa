@@ -7,6 +7,7 @@ import it.unipd.dei.se.nexa.parser.Claim;
 import it.unipd.dei.se.nexa.parser.Publication;
 import it.unipd.dei.se.nexa.utility.ConfigManager;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
+import it.unipd.dei.se.nexa.utility.QueryExpensionUtil;
 import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -131,6 +132,8 @@ public class Searcher {
                         translatedClaims++;
                     }
                 }
+
+                text = QueryExpensionUtil.expandQuery(text);
 
                 final Query query = buildQuery(text);
                 if (query == null) {

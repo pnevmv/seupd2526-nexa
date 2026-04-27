@@ -16,8 +16,12 @@ posModel: code/java/src/main/resources/en/openNLPmodels/en-pos.bin
 #path to the lemmatizerModel
 lemmatizerModel: code/java/src/main/resources/en/openNLPmodels/en-lemmas.bin
 
-#path to the synonyms file (blank = skip synonym filter; no English synonyms file in repo)
-synonymsFile:
+#path to the synonyms file
+synonymsFile: src/main/resources/en/synonyms/synonyms.txt
+
+# --- query expansion ---
+enableQueryExpansion: true
+queryExpansionServiceUrl: http://127.0.0.1:8001/expand
 
 #path to the language detector model
 languageDetectorModel: code/java/src/main/resources/openNLPmodels/langdetect-183.bin
