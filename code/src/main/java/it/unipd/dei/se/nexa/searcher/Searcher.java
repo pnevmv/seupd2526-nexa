@@ -6,6 +6,8 @@ import it.unipd.dei.se.nexa.analyzer.EnglishAnalyzer;
 import it.unipd.dei.se.nexa.parser.Claim;
 import it.unipd.dei.se.nexa.parser.Publication;
 import it.unipd.dei.se.nexa.utility.ConfigManager;
+import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
+import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -53,6 +55,7 @@ public class Searcher {
     private final String titleField;
     private final String abstractField;
     private final List<Claim> claims;
+    private final String claimsLanguage;
     private final int maxDocsRetrieved;
     private final String runID;
     private final Path runFile;
@@ -74,6 +77,7 @@ public class Searcher {
 
         this.claims = new ObjectMapper().readValue(topicsFile.toFile(),
                 new TypeReference<List<Claim>>() {});
+        this.claimsLanguage = inferClaimsLanguage(topicsFile);
 
         this.runID = runID;
         this.maxDocsRetrieved = maxDocsRetrieved;
@@ -82,6 +86,13 @@ public class Searcher {
 
     public void search() throws Exception {
         System.out.printf("#### Start searching (%d claims) ####%n", claims.size());
+        final boolean translateClaimsToEnglish = TranslationUtil.shouldTranslateClaimsToEnglish();
+        final String translationTargetLanguage = TranslationUtil.getTranslationTargetLanguage();
+        System.out.println("Translate non-English claims to " + translationTargetLanguage + ": "
+                + translateClaimsToEnglish);
+        if (translateClaimsToEnglish && claimsLanguage != null) {
+            System.out.println("Claims language inferred from topics file: " + claimsLanguage);
+        }
         final long start = System.currentTimeMillis();
 
         try (PrintWriter run = new PrintWriter(Files.newBufferedWriter(
@@ -93,6 +104,7 @@ public class Searcher {
             final StoredFields storedFields = reader.storedFields();
             final int total = claims.size();
             int processed = 0;
+            int translatedClaims = 0;
 
             for (Claim claim : claims) {
                 processed++;
@@ -104,10 +116,20 @@ public class Searcher {
                             processed, total, rate, elapsedMs / 1000, etaSec);
                 }
 
-                final String text = claim.getText();
+                String text = claim.getText();
                 if (text == null || text.isBlank()) {
                     System.err.printf("Skipping empty claim: index=%d%n", claim.getIndex());
                     continue;
+                }
+
+                if (translateClaimsToEnglish) {
+                    final String sourceLanguage = claimsLanguage != null
+                            ? claimsLanguage
+                            : LanguageDetectionUtil.detectClaimLanguage(claim);
+                    if (shouldTranslateClaim(sourceLanguage, translationTargetLanguage)) {
+                        text = TranslationUtil.translateClaimText(text, sourceLanguage, translationTargetLanguage);
+                        translatedClaims++;
+                    }
                 }
 
                 final Query query = buildQuery(text);
@@ -124,6 +146,11 @@ public class Searcher {
                     run.printf(Locale.ENGLISH, "%d Q0 %s %d %f %s%n",
                             claim.getIndex(), pubkey, rank, hits[rank].score, runID);
                 }
+            }
+
+            if (translateClaimsToEnglish) {
+                System.out.printf("Translated %d non-English claim(s) to %s.%n",
+                        translatedClaims, translationTargetLanguage);
             }
         } finally {
             reader.close();
@@ -162,6 +189,32 @@ public class Searcher {
 
         final BooleanQuery combined = builder.build();
         return combined.clauses().isEmpty() ? null : combined;
+    }
+
+    private static boolean shouldTranslateClaim(final String sourceLanguage, final String targetLanguage) {
+        return sourceLanguage != null
+                && !sourceLanguage.isBlank()
+                && !LanguageDetectionUtil.UNKNOWN.equalsIgnoreCase(sourceLanguage)
+                && !sourceLanguage.equalsIgnoreCase(targetLanguage);
+    }
+
+    private static String inferClaimsLanguage(final Path topicsFile) {
+        if (topicsFile == null || topicsFile.getFileName() == null) {
+            return null;
+        }
+
+        final String fileName = topicsFile.getFileName().toString().toLowerCase(Locale.ROOT);
+        if (fileName.startsWith(LanguageDetectionUtil.FRENCH + "_")) {
+            return LanguageDetectionUtil.FRENCH;
+        }
+        if (fileName.startsWith(LanguageDetectionUtil.GERMAN + "_")) {
+            return LanguageDetectionUtil.GERMAN;
+        }
+        if (fileName.startsWith(LanguageDetectionUtil.ENGLISH + "_")) {
+            return LanguageDetectionUtil.ENGLISH;
+        }
+
+        return null;
     }
 
     private static String requireConfig(final String key) {
