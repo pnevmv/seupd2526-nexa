@@ -12,17 +12,17 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 
-public final class QueryExpensionUtil {
+public final class QueryExpansionUtil {
 
     private static final String ENABLE_QUERY_EXPANSION_KEY = "enableQueryExpansion";
     private static final String SERVICE_URL_KEY = "queryExpansionServiceUrl";
     private static final String DEFAULT_SERVICE_URL = "http://127.0.0.1:8001/expand";
     private static final Duration REQUEST_TIMEOUT = Duration.ofMinutes(2);
-    private static final ConfigManager ENGLISH_CONFIG = ConfigManager.getInstance("en");
+    private static final ConfigManager GLOBAL_CONFIG = ConfigManager.getGlobalConfig();
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private QueryExpensionUtil() {
+    private QueryExpansionUtil() {
     }
 
     public static String expandQuery(final String query) {
@@ -31,13 +31,17 @@ public final class QueryExpensionUtil {
         }
 
         // Keep the original query unless expansion is explicitly enabled in config.
-        if (!Boolean.TRUE.equals(ENGLISH_CONFIG.getBool(ENABLE_QUERY_EXPANSION_KEY))) {
+        if (!Boolean.TRUE.equals(GLOBAL_CONFIG.getBool(ENABLE_QUERY_EXPANSION_KEY))) {
             return query;
         }
 
-        final String expandedQuery = requestExpandedQuery(query);
-        // Fall back to the original query if the service returns an empty expansion.
-        return expandedQuery == null || expandedQuery.isBlank() ? query : expandedQuery.trim();
+        try {
+            final String expandedQuery = requestExpandedQuery(query);
+            return combineOriginalAndExpanded(query, expandedQuery);
+        } catch (IllegalStateException e) {
+            System.err.println("Query expansion failed; using original query. " + e.getMessage());
+            return query;
+        }
     }
 
     private static String requestExpandedQuery(final String query) {
@@ -78,8 +82,23 @@ public final class QueryExpensionUtil {
     }
 
     private static String resolveServiceUrl() {
-        final String configuredUrl = ENGLISH_CONFIG.getString(SERVICE_URL_KEY);
+        final String configuredUrl = GLOBAL_CONFIG.getString(SERVICE_URL_KEY);
         // Use a local default endpoint when the config does not override the service URL.
         return configuredUrl == null || configuredUrl.isBlank() ? DEFAULT_SERVICE_URL : configuredUrl;
+    }
+
+    private static String combineOriginalAndExpanded(final String originalQuery,
+                                                     final String expandedQuery) {
+        if (expandedQuery == null || expandedQuery.isBlank()) {
+            return originalQuery;
+        }
+
+        final String original = originalQuery.trim();
+        final String expanded = expandedQuery.trim();
+        if (original.equalsIgnoreCase(expanded)) {
+            return original;
+        }
+
+        return original + " " + expanded;
     }
 }

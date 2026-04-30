@@ -24,6 +24,18 @@ public class Claim {
     @JsonProperty("pubkey")
     private int pubkey;
 
+    @JsonProperty("translation_provider")
+    private String translationProvider;
+
+    @JsonProperty("target_language")
+    private String targetLanguage;
+
+    @JsonProperty("query_expansion_provider")
+    private String queryExpansionProvider;
+
+    @JsonProperty("query_expansion_combined")
+    private boolean queryExpansionCombined;
+
     @Override
     public String toString() {
         return "Claim n°" + index +
@@ -41,5 +53,19 @@ public class Claim {
 
     public int getPubkey() {
         return pubkey;
+    }
+
+    public boolean hasMaterializedTranslation(final String expectedTargetLanguage) {
+        return translationProvider != null
+                && !translationProvider.isBlank()
+                && targetLanguage != null
+                && expectedTargetLanguage != null
+                && targetLanguage.equalsIgnoreCase(expectedTargetLanguage);
+    }
+
+    public boolean hasMaterializedQueryExpansion() {
+        return queryExpansionCombined
+                && queryExpansionProvider != null
+                && !queryExpansionProvider.isBlank();
     }
 }
