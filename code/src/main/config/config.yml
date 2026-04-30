@@ -2,8 +2,8 @@
 
 # --- indexing ---
 
-collectionPath: code/datasets/collection_data.json
-indexPath: "code/experiment/index"
+collectionPath: datasets/processed/documents/translated/collection_data_en_translated.json
+indexPath: "experiment/index"
 
 # resolved relative to repo root or code/
 languageDetectorModel: src/main/resources/langdetect-183.bin
@@ -28,16 +28,23 @@ translationCommand:
 # used when provider=gemma
 translationServiceUrl: http://127.0.0.1:8008/translate
 
+# --- query expansion ---
+
+enableQueryExpansion: true
+queryExpansionServiceUrl: http://127.0.0.1:8001/expand
+
 # --- searching ---
 
 # claims JSON: array of {index, text, pubkey?}
-topics: code/datasets/en_train.json
+# active preprocessed topics. Use the expanded path after running expand_claims.py.
+topics: datasets/processed/queries/translated/fr_train_en_translated.json
+expandedTopics: datasets/processed/queries/expanded/fr_train_en_translated_expanded.json
 
 # runID doubles as the output filename
-runID: nexa-baseline
+runID: nexa-fr-train-translated-expanded
 runPath: runs
 
-maxDocsRetrieved: 1000
+maxDocsRetrieved: 50
 
 # --- reserved ---
 # leftovers from the LongEval pipeline. kept as placeholders so we know the
