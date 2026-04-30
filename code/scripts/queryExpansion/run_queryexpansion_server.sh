@@ -23,5 +23,16 @@ if [[ -x "${VENV_PYTHON}" ]]; then
   PYTHON_BIN="${VENV_PYTHON}"
 fi
 
+SERVER_ARGS=()
+if [[ -n "${MODEL:-}" ]]; then
+  SERVER_ARGS+=(--model-id "${MODEL}")
+fi
+if [[ -n "${PORT:-}" ]]; then
+  SERVER_ARGS+=(--port "${PORT}")
+fi
+if [[ -n "${CACHE_FILE:-}" ]]; then
+  SERVER_ARGS+=(--cache-file "${CACHE_FILE}")
+fi
+
 # Run the server
-exec "${PYTHON_BIN}" "${SCRIPT_DIR}/queryexpansion_server.py" "$@"
+exec "${PYTHON_BIN}" "${SCRIPT_DIR}/queryexpansion_server.py" "${SERVER_ARGS[@]}" "$@"
