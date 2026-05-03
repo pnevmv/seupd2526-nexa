@@ -96,3 +96,5 @@ runs/
 
 # Query expansion cache
 code/scripts/queryExpansion/queryexpansion_cache.json
+
+.venv/

@@ -15,6 +15,7 @@ import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 
 import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
+import org.apache.lucene.analysis.en.KStemFilter;
 import org.apache.lucene.analysis.en.PorterStemFilter;
 
 import org.apache.lucene.analysis.icu.ICUFoldingFilter;
@@ -67,6 +68,7 @@ public class EnglishAnalyzer extends Analyzer {
     public enum StemFilterType {
         PORTER,
         SNOWBALL,
+        KSTEM,
         NLP,
         NONE,
     }
@@ -147,6 +149,7 @@ public class EnglishAnalyzer extends Analyzer {
         switch (stemFilter) {
             case "Porter" -> this.stemFilterType = StemFilterType.PORTER;
             case "SnowBall" -> this.stemFilterType = StemFilterType.SNOWBALL;
+            case "KStem" -> this.stemFilterType = StemFilterType.KSTEM;
             case "Nlp" -> this.stemFilterType = StemFilterType.NLP;
             default -> this.stemFilterType = StemFilterType.NONE;
         }
@@ -222,6 +225,7 @@ public class EnglishAnalyzer extends Analyzer {
         switch (stemFilterType) {
             case PORTER -> filter = new PorterStemFilter(filter);
             case SNOWBALL -> filter = new SnowballFilter(filter, new EnglishStemmer());
+            case KSTEM -> filter = new KStemFilter(filter);
             case NLP -> filter = new OpenNLPLemmatizerFilter(filter, loadLemmatizerModel());
             case NONE -> {}
         }

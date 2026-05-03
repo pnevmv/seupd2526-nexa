@@ -2,7 +2,7 @@
 
 # --- indexing ---
 
-collectionPath: datasets/processed/documents/translated/collection_data_en_translated.json
+collectionPath: datasets/processed/documents/collection_data.json
 indexPath: "experiment/index"
 
 # resolved relative to repo root or code/

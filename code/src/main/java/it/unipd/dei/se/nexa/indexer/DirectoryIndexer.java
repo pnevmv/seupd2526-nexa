@@ -37,6 +37,9 @@ public class DirectoryIndexer {
     private final IndexWriter writer;
     private static final ConfigManager config = ConfigManager.getGlobalConfig();
 
+    private static final HttpClient httpClient = HttpClient.newHttpClient();
+    private static final ObjectMapper mapper = new ObjectMapper();
+
 
     public DirectoryIndexer(Path docsDir, Path indexPath, Analyzer analyzer) throws IOException {
         if (!Files.isReadable(docsDir)) {
@@ -74,37 +77,37 @@ public class DirectoryIndexer {
                     JsonParser parser = new JsonParser(reader);
 
                     for (Publication pub : parser) {
-                        if (isIndexablePublication(pub)) {
-                            final String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
-                            String indexingLanguage = resolveIndexingLanguage(detectedLanguage);
-                            Publication publicationToIndex = pub;
 
-                            if (translateNonEnglishToEnglish
-                                    && shouldTranslateToTargetLanguage(indexingLanguage, translationTargetLanguage)) {
-                                publicationToIndex = TranslationUtil.translatePublication(
-                                        pub,
-                                        indexingLanguage,
-                                        translationTargetLanguage);
+                        if (isIndexablePublication(pub)) {
+                            // Detect language
+                            final String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
+                            String originalLanguage = resolveIndexingLanguage(detectedLanguage);
+
+                            Publication publicationToIndex = pub;
+                            String indexingLanguage = originalLanguage;
+
+                            // Translate
+                            if (translateNonEnglishToEnglish && shouldTranslateToTargetLanguage(originalLanguage, translationTargetLanguage)) {
+                                publicationToIndex = TranslationUtil.translatePublication(pub, originalLanguage, translationTargetLanguage);
                                 indexingLanguage = translationTargetLanguage;
                             }
 
+                            // Embedding on final langauge
                             if (embeddingsEnabled) {
                                 try {
-                                    String textToVectorize = safeString(publicationToIndex.getTitle()) + " "
-                                            + safeString(publicationToIndex.getAbstract());
-
+                                    String textToVectorize = safeString(publicationToIndex.getTitle()) + " " + safeString(publicationToIndex.getAbstract());
                                     float[] vector = getVector(textToVectorize, embeddingsServiceUrl);
                                     publicationToIndex.setEmbedding(vector);
-
                                 } catch (Exception e) {
-                                    System.err.println("Errore vettorizzazione per id: "
-                                            + publicationToIndex.getPubkey() + ": " + e.getMessage());
+                                    System.err.println("Errore vettorizzazione per id: " + publicationToIndex.getPubkey() + ": " + e.getMessage());
                                 }
                             }
 
                             writer.addDocument(publicationToIndex.toLuceneDocument(indexingLanguage));
-                            System.out.println("Indexed document: " + count + " with id: " + publicationToIndex.getPubkey()
-                                    + " [" + indexingLanguage + "]");
+
+                            if(count % 100 == 0) {
+                                System.out.println("Indexed documents: " + count + "...");
+                            }
                             count++;
                         }
                     }
@@ -123,9 +126,6 @@ public class DirectoryIndexer {
 
     private float[] getVector(String text, String serviceUrl) throws Exception {
 
-        HttpClient client = HttpClient.newHttpClient();
-        ObjectMapper mapper = new ObjectMapper();
-
         Map<String, Object> payload = Map.of("texts", List.of(text));
         String jsonBody = mapper.writeValueAsString(payload);
 
@@ -135,10 +135,10 @@ public class DirectoryIndexer {
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            throw new RuntimeException("Errore dal server BERT: " + response.body());
+            throw new RuntimeException("Error BERT server: " + response.body());
         }
 
         JsonNode root = mapper.readTree(response.body());
