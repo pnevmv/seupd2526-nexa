@@ -95,10 +95,13 @@ public class DirectoryIndexer {
 
                             writer.addDocument(publicationToIndex.toLuceneDocument(indexingLanguage));
 
-                            if(count % 100 == 0) {
-                                System.out.println("Indexed documents: " + count + "...");
-                            }
                             count++;
+                            if (count % 100 == 0) {
+                                long elapsed = System.currentTimeMillis() - start;
+                                long s = elapsed / 1000;
+                                System.out.printf("Indexed documents: %d  [%02d:%02d elapsed, %.1f docs/s]%n",
+                                        count, s / 60, s % 60, count * 1000.0 / elapsed);
+                            }
                         }
                     }
                 } catch (Exception e) {
