@@ -7,7 +7,10 @@ import fasttext
 import uvicorn
 import torch
 import time
+import os
 from typing import List
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI(title="NLP Processing Pipeline for IR Paper")
 
@@ -24,7 +27,7 @@ def load_models():
 
     # 1. Language Detector
     start = time.time()
-    models['lang'] = fasttext.load_model("lid.176.ftz")
+    models['lang'] = fasttext.load_model(os.path.join(SCRIPT_DIR, "lid.176.ftz"))
     print(f"[1/5] FastText (Language Detector) loaded in: {time.time() - start:.2f}s")
 
     # 2. Translator (EasyNMT)
@@ -47,21 +50,9 @@ def load_models():
         print(f"[4/5] Failed to load Gemma 300M: {e}")
         models['en'] = None
 
-    # 5. TranslateGemma
-    start = time.time()
-    try:
-        # Use float16/bfloat16 when available to reduce memory usage on Metal/CUDA
-        torch_dtype = torch.float16 if device == "mps" else (torch.bfloat16 if torch.cuda.is_available() else torch.float32)
-        models['translategemma'] = pipeline(
-            "image-text-to-text",
-            model="google/translategemma-4b-it",
-            device=device,
-            torch_dtype=torch_dtype
-        )
-        print(f"[5/5] TranslateGemma 4B loaded in: {time.time() - start:.2f}s")
-    except Exception as e:
-        print(f"[5/5] Failed to load TranslateGemma: {e}")
-        models['translategemma'] = None
+    # 5. TranslateGemma — skipped to preserve MPS memory for embeddings
+    models['translategemma'] = None
+    print("[5/5] TranslateGemma 4B skipped (disabled to free MPS memory)")
 
     # 6. Reranker (Cross-Encoder)
     start = time.time()
@@ -139,8 +130,11 @@ async def process_pipeline(data: TextRequest):
             prediction = loaded_models['lang'].predict(text.replace("\n", " "), k=1)
             detected_lang = prediction[0][0].replace("__label__", "")
 
-            # 2. Translation
-            english_text = text if detected_lang == 'en' else loaded_models['translator'].translate(text, target_lang='en')
+            # 2. Translation (fall back to original if the lang-pair model is missing)
+            try:
+                english_text = text if detected_lang == 'en' else loaded_models['translator'].translate(text, target_lang='en')
+            except Exception:
+                english_text = text
 
             # 3. BGE-M3 embedding
             v_multi = loaded_models['multi'].encode(text).tolist()

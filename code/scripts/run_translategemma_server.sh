@@ -20,4 +20,4 @@ if [[ -x "${VENV_PYTHON}" ]]; then
   PYTHON_BIN="${VENV_PYTHON}"
 fi
 
-exec "${PYTHON_BIN}" "${SCRIPT_DIR}/translategemma_server.py" "$@"
+exec "${PYTHON_BIN}" "${SCRIPT_DIR}/inference_server.py" "$@"
