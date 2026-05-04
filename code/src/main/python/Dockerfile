@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY bert.py /app/bert.py
+COPY inference_server.py /app/inference_server.py
 
 RUN pip install --no-cache-dir \
     fastapi \
@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir \
 
 EXPOSE 8080
 
-CMD ["python", "bert.py"]
+CMD ["python", "inference_server.py"]

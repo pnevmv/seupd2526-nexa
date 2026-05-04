@@ -11,12 +11,12 @@ from typing import List
 
 app = FastAPI(title="NLP Processing Pipeline for IR Paper")
 
-# Verifica MPS (Metal) per il tuo Mac M4
+# Use Metal (MPS) on Apple Silicon when available, otherwise fall back to CPU
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 
 print("\n" + "="*50)
-print(f"SISTEMA DI INDICIZZAZIONE NEXA - MAC M4")
-print(f"DEVICE RILEVATO: {device.upper()}")
+print(f"NEXA INDEXING SYSTEM")
+print(f"DEVICE: {device.upper()}")
 print("="*50 + "\n")
 
 def load_models():
@@ -25,32 +25,32 @@ def load_models():
     # 1. Language Detector
     start = time.time()
     models['lang'] = fasttext.load_model("lid.176.ftz")
-    print(f"✅ [1/5] FastText (Language Detector) caricato in: {time.time() - start:.2f}s")
+    print(f"[1/5] FastText (Language Detector) loaded in: {time.time() - start:.2f}s")
 
-    # 2. Traduttore (EasyNMT)
+    # 2. Translator (EasyNMT)
     start = time.time()
     models['translator'] = EasyNMT('opus-mt')
-    print(f"✅ [2/5] EasyNMT (Translator) caricato in: {time.time() - start:.2f}s")
+    print(f"[2/5] EasyNMT (Translator) loaded in: {time.time() - start:.2f}s")
 
-    # 3. BGE-M3 (Multilingua)
+    # 3. BGE-M3 (Multilingual)
     start = time.time()
     models['multi'] = SentenceTransformer("BAAI/bge-m3", device=device)
-    print(f"✅ [3/5] BGE-M3 (Multilingual Embedder) caricato in: {time.time() - start:.2f}s")
+    print(f"[3/5] BGE-M3 (Multilingual Embedder) loaded in: {time.time() - start:.2f}s")
 
-    # 4. Gemma 300M (Inglese specifico)
+    # 4. Gemma 300M (English-specific embedder)
     start = time.time()
     GEMMA_PREFIX = "search_document: "
     try:
         models['en'] = SentenceTransformer("google/embeddinggemma-300m", device=device, trust_remote_code=True)
-        print(f"✅ [4/5] Gemma 300M (English Embedder) caricato in: {time.time() - start:.2f}s")
+        print(f"[4/5] Gemma 300M (English Embedder) loaded in: {time.time() - start:.2f}s")
     except Exception as e:
-        print(f"❌ Errore nel caricamento di Gemma: {e}")
+        print(f"[4/5] Failed to load Gemma 300M: {e}")
         models['en'] = None
 
     # 5. TranslateGemma
     start = time.time()
     try:
-        # Usa float16/bfloat16 se disponibile per risparmiare memoria (Metal/CUDA)
+        # Use float16/bfloat16 when available to reduce memory usage on Metal/CUDA
         torch_dtype = torch.float16 if device == "mps" else (torch.bfloat16 if torch.cuda.is_available() else torch.float32)
         models['translategemma'] = pipeline(
             "image-text-to-text",
@@ -58,29 +58,28 @@ def load_models():
             device=device,
             torch_dtype=torch_dtype
         )
-        print(f"✅ [5/5] TranslateGemma 4B caricato in: {time.time() - start:.2f}s")
+        print(f"[5/5] TranslateGemma 4B loaded in: {time.time() - start:.2f}s")
     except Exception as e:
-        print(f"❌ Errore nel caricamento di TranslateGemma: {e}")
+        print(f"[5/5] Failed to load TranslateGemma: {e}")
         models['translategemma'] = None
 
     # 6. Reranker (Cross-Encoder)
     start = time.time()
     try:
         models['reranker'] = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', device=device)
-        print(f"✅ [6/6] Cross-Encoder Reranker caricato in: {time.time() - start:.2f}s")
+        print(f"[6/6] Cross-Encoder Reranker loaded in: {time.time() - start:.2f}s")
     except Exception as e:
-        print(f"❌ Errore nel caricamento del Reranker: {e}")
+        print(f"[6/6] Failed to load Reranker: {e}")
         models['reranker'] = None
 
     return models
 
-# Carichiamo tutto all'avvio
 loaded_models = load_models()
 GEMMA_PREFIX = "search_document: "
 
-print(f"\n✨ TUTTI I MODELLI PRONTI! Il server è in ascolto sulla porta 8080.\n")
+print(f"\nAll models ready. Server listening on port 8080.\n")
 
-# --- HELPER PER TRANSLATEGEMMA ---
+# --- TRANSLATEGEMMA HELPER ---
 def extract_translation(output):
     if not output:
         raise ValueError("Empty generation output.")
@@ -98,7 +97,7 @@ def extract_translation(output):
     raise ValueError(f"Unexpected TranslateGemma output format: {output}")
 
 
-# --- MODELLI DATI ---
+# --- DATA MODELS ---
 class TextRequest(BaseModel):
     texts: List[str]
 
@@ -127,7 +126,7 @@ class RerankRequest(BaseModel):
 class RerankResponse(BaseModel):
     scores: List[float]
 
-# --- PIPELINE E ENDPOINT ---
+# --- ENDPOINTS ---
 @app.post("/process", response_model=ProcessResponse)
 async def process_pipeline(data: TextRequest):
     if not data.texts:
@@ -143,11 +142,11 @@ async def process_pipeline(data: TextRequest):
             # 2. Translation
             english_text = text if detected_lang == 'en' else loaded_models['translator'].translate(text, target_lang='en')
 
-            # 3. Embedding BGE-M3
+            # 3. BGE-M3 embedding
             v_multi = loaded_models['multi'].encode(text).tolist()
 
-            # 4. Embedding Gemma
-            v_gemma = [0.0] * 1024 # Fallback
+            # 4. Gemma embedding
+            v_gemma = [0.0] * 1024  # fallback when model is unavailable
             if loaded_models['en']:
                 v_gemma = loaded_models['en'].encode(GEMMA_PREFIX + english_text).tolist()
 
@@ -166,7 +165,7 @@ async def process_pipeline(data: TextRequest):
 @app.post("/translate", response_model=TranslateGemmaResponse)
 async def translate_gemma_endpoint(data: TranslateGemmaRequest):
     if not loaded_models.get('translategemma'):
-        raise HTTPException(status_code=503, detail="TranslateGemma model non è stato caricato correttamente")
+        raise HTTPException(status_code=503, detail="TranslateGemma model failed to load")
 
     messages = [
         {
@@ -191,7 +190,7 @@ async def translate_gemma_endpoint(data: TranslateGemmaRequest):
 @app.post("/rerank", response_model=RerankResponse)
 async def rerank_endpoint(data: RerankRequest):
     if not loaded_models.get('reranker'):
-        raise HTTPException(status_code=503, detail="Reranker model non è stato caricato correttamente")
+        raise HTTPException(status_code=503, detail="Reranker model failed to load")
 
     if not data.documents:
         return {"scores": []}
@@ -210,5 +209,4 @@ def health():
     return {"status": "ok", "device": device}
 
 if __name__ == "__main__":
-    # Soluzione al bug loop_factory: usiamo uvicorn.run con parametri semplificati
-    uvicorn.run("bert:app", host="0.0.0.0", port=8080, reload=False, workers=1)
+    uvicorn.run("inference_server:app", host="0.0.0.0", port=8080, reload=False, workers=1)
