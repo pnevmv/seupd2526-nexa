@@ -7,8 +7,6 @@ import it.unipd.dei.se.nexa.parser.Claim;
 import it.unipd.dei.se.nexa.parser.Publication;
 import it.unipd.dei.se.nexa.utility.ConfigManager;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
-import it.unipd.dei.se.nexa.utility.QueryExpansionUtil;
-import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import it.unipd.dei.se.nexa.utility.EmbeddingService;
 import it.unipd.dei.se.nexa.utility.RerankService;
 import org.apache.lucene.analysis.Analyzer;
@@ -29,12 +27,9 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.QueryBuilder;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Locale;
 
@@ -107,20 +102,15 @@ public class Searcher {
 
     public void search() throws Exception {
         System.out.printf("#### Start searching (%d claims) ####%n", claims.size());
-        final boolean translateClaimsToEnglish = TranslationUtil.shouldTranslateClaimsToEnglish();
-        final String translationTargetLanguage = TranslationUtil.getTranslationTargetLanguage();
-        System.out.println("Translate non-English claims to " + translationTargetLanguage + ": "
-                + translateClaimsToEnglish);
-        if (translateClaimsToEnglish && claimsLanguage != null) {
+        final ClaimQueryProcessor processor = new ClaimQueryProcessor(claimsLanguage);
+        System.out.println("Translate non-English claims to " + processor.translationTargetLanguage() + ": "
+                + processor.translatesClaimsToEnglish());
+        if (processor.translatesClaimsToEnglish() && claimsLanguage != null) {
             System.out.println("Claims language inferred from topics file: " + claimsLanguage);
         }
         final long start = System.currentTimeMillis();
 
-        try (PrintWriter run = new PrintWriter(Files.newBufferedWriter(
-                runFile, StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.WRITE))) {
+        try (RunWriter run = new RunWriter(runFile, runID)) {
 
             final StoredFields storedFields = reader.storedFields();
             final int total = claims.size();
@@ -137,24 +127,14 @@ public class Searcher {
                             processed, total, rate, elapsedMs / 1000, etaSec);
                 }
 
-                String text = claim.getText();
+                final ProcessedClaimQuery processedClaim = processor.process(claim);
+                String text = processedClaim.text();
                 if (text == null || text.isBlank()) {
                     System.err.printf("Skipping empty claim: index=%d%n", claim.getIndex());
                     continue;
                 }
-
-                if (translateClaimsToEnglish && !claim.hasMaterializedTranslation(translationTargetLanguage)) {
-                    final String sourceLanguage = claimsLanguage != null
-                            ? claimsLanguage
-                            : LanguageDetectionUtil.detectClaimLanguage(claim);
-                    if (shouldTranslateClaim(sourceLanguage, translationTargetLanguage)) {
-                        text = TranslationUtil.translateClaimText(text, sourceLanguage, translationTargetLanguage);
-                        translatedClaims++;
-                    }
-                }
-
-                if (!claim.hasMaterializedQueryExpansion()) {
-                    text = QueryExpansionUtil.expandQuery(text);
+                if (processedClaim.translated()) {
+                    translatedClaims++;
                 }
 
                 ScoreDoc[] hits = new ScoreDoc[0];
@@ -220,14 +200,13 @@ public class Searcher {
                 for (int rank = 0; rank < hits.length; rank++) {
                     final Document doc = storedFields.document(hits[rank].doc);
                     final String pubkey = doc.get(Publication.FIELD_PUBKEY);
-                    run.printf(Locale.ENGLISH, "%d Q0 %s %d %f %s%n",
-                            claim.getIndex(), pubkey, rank, hits[rank].score, runID);
+                    run.write(claim.getIndex(), pubkey, rank, hits[rank].score);
                 }
             }
 
-            if (translateClaimsToEnglish) {
+            if (processor.translatesClaimsToEnglish()) {
                 System.out.printf("Translated %d non-English claim(s) to %s.%n",
-                        translatedClaims, translationTargetLanguage);
+                        translatedClaims, processor.translationTargetLanguage());
             }
         } finally {
             reader.close();
@@ -269,7 +248,6 @@ public class Searcher {
             builder.add(new BoostQuery(abstractQuery, abstractBoost), BooleanClause.Occur.SHOULD);
         }
 
-        // Phrase Query (cerchiamo le parole vicine)
         Double phraseBoostOpt = CONFIG.getDouble("phraseBoost");
         if (phraseBoostOpt != null && phraseBoostOpt > 0) {
             Query titlePhrase = queryBuilder.createPhraseQuery(titleField, text);
@@ -282,12 +260,11 @@ public class Searcher {
             }
         }
 
-        // Fuzzy Query (per tollerare gli errori di battitura)
         Double fuzzyBoostOpt = CONFIG.getDouble("fuzzyBoost");
         if (fuzzyBoostOpt != null && fuzzyBoostOpt > 0) {
-            String[] tokens = text.split("\\W+"); // dividiamo la frase in parole
+            String[] tokens = text.split("\\W+");
             for (String token : tokens) {
-                if (token.length() > 3) { // Applichiamo il fuzzy solo a parole lunghe
+                if (token.length() > 3) {
                     builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(new org.apache.lucene.index.Term(titleField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
                     builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(new org.apache.lucene.index.Term(abstractField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
                 }
@@ -331,8 +308,7 @@ public class Searcher {
         if (lexicalDocs != null && lexicalDocs.scoreDocs != null) {
             for (int i = 0; i < lexicalDocs.scoreDocs.length; i++) {
                 int docId = lexicalDocs.scoreDocs[i].doc;
-                // Weighted RRF: applichiamo alpha alla ricerca testuale
-                double score = alpha * (1.0 / (k + i + 1));
+                double score = alpha * (1.0 / (k + i + 1)); // alpha weights lexical contribution
                 rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
             }
         }
@@ -340,20 +316,12 @@ public class Searcher {
         if (semanticDocs != null && semanticDocs.scoreDocs != null) {
             for (int i = 0; i < semanticDocs.scoreDocs.length; i++) {
                 int docId = semanticDocs.scoreDocs[i].doc;
-                // Weighted RRF: applichiamo (1 - alpha) alla ricerca semantica
-                double score = (1.0 - alpha) * (1.0 / (k + i + 1));
+                double score = (1.0 - alpha) * (1.0 / (k + i + 1)); // (1-alpha) weights semantic contribution
                 rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
             }
         }
 
         return rrfScores;
-    }
-
-    private static boolean shouldTranslateClaim(final String sourceLanguage, final String targetLanguage) {
-        return sourceLanguage != null
-                && !sourceLanguage.isBlank()
-                && !LanguageDetectionUtil.UNKNOWN.equalsIgnoreCase(sourceLanguage)
-                && !sourceLanguage.equalsIgnoreCase(targetLanguage);
     }
 
     private static String inferClaimsLanguage(final Path topicsFile) {
