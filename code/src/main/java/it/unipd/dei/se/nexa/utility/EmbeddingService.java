@@ -59,7 +59,6 @@ public final class EmbeddingService {
             final JsonNode resultsNode = root.path("results");
 
             if (resultsNode.isArray() && !resultsNode.isEmpty()) {
-                // Utilizziamo embedding_multi (generato da BGE-M3) come default
                 JsonNode vectorNode = resultsNode.get(0).path("embedding_multi");
                 if (vectorNode.isArray()) {
                     float[] vector = new float[vectorNode.size()];
