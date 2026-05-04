@@ -25,7 +25,9 @@ public final class EmbeddingService {
             throw new IllegalArgumentException("embeddingsServiceUrl must be configured.");
         }
 
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .build();
         this.objectMapper = new ObjectMapper();
         this.serviceUri = URI.create(serviceUrl);
     }
