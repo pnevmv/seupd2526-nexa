@@ -98,3 +98,6 @@ runs/
 code/scripts/queryExpansion/queryexpansion_cache.json
 
 .venv/
+
+# Temporary index directories
+tmp-index-check/
