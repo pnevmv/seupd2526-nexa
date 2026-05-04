@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from easynmt import EasyNMT
+from transformers import pipeline
 import fasttext
 import uvicorn
 import torch
@@ -14,8 +15,8 @@ app = FastAPI(title="NLP Processing Pipeline for IR Paper")
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 
 print("\n" + "="*50)
-print(f"🚀 SISTEMA DI INDICIZZAZIONE NEXA - MAC M4")
-print(f"🚀 DEVICE RILEVATO: {device.upper()}")
+print(f"SISTEMA DI INDICIZZAZIONE NEXA - MAC M4")
+print(f"DEVICE RILEVATO: {device.upper()}")
 print("="*50 + "\n")
 
 def load_models():
@@ -24,27 +25,43 @@ def load_models():
     # 1. Language Detector
     start = time.time()
     models['lang'] = fasttext.load_model("lid.176.ftz")
-    print(f"✅ [1/4] FastText (Language Detector) caricato in: {time.time() - start:.2f}s")
+    print(f"✅ [1/5] FastText (Language Detector) caricato in: {time.time() - start:.2f}s")
 
-    # 2. Traduttore
+    # 2. Traduttore (EasyNMT)
     start = time.time()
     models['translator'] = EasyNMT('opus-mt')
-    print(f"✅ [2/4] EasyNMT (Translator) caricato in: {time.time() - start:.2f}s")
+    print(f"✅ [2/5] EasyNMT (Translator) caricato in: {time.time() - start:.2f}s")
 
     # 3. BGE-M3 (Multilingua)
     start = time.time()
     models['multi'] = SentenceTransformer("BAAI/bge-m3", device=device)
-    print(f"✅ [3/4] BGE-M3 (Multilingual Embedder) caricato in: {time.time() - start:.2f}s")
+    print(f"✅ [3/5] BGE-M3 (Multilingual Embedder) caricato in: {time.time() - start:.2f}s")
 
     # 4. Gemma 300M (Inglese specifico)
     start = time.time()
     GEMMA_PREFIX = "search_document: "
     try:
         models['en'] = SentenceTransformer("google/embeddinggemma-300m", device=device, trust_remote_code=True)
-        print(f"✅ [4/4] Gemma 300M (English Embedder) caricato in: {time.time() - start:.2f}s")
+        print(f"✅ [4/5] Gemma 300M (English Embedder) caricato in: {time.time() - start:.2f}s")
     except Exception as e:
         print(f"❌ Errore nel caricamento di Gemma: {e}")
         models['en'] = None
+
+    # 5. TranslateGemma
+    start = time.time()
+    try:
+        # Usa float16/bfloat16 se disponibile per risparmiare memoria (Metal/CUDA)
+        torch_dtype = torch.float16 if device == "mps" else (torch.bfloat16 if torch.cuda.is_available() else torch.float32)
+        models['translategemma'] = pipeline(
+            "image-text-to-text",
+            model="google/translategemma-4b-it",
+            device=device,
+            torch_dtype=torch_dtype
+        )
+        print(f"✅ [5/5] TranslateGemma 4B caricato in: {time.time() - start:.2f}s")
+    except Exception as e:
+        print(f"❌ Errore nel caricamento di TranslateGemma: {e}")
+        models['translategemma'] = None
 
     return models
 
@@ -53,6 +70,24 @@ loaded_models = load_models()
 GEMMA_PREFIX = "search_document: "
 
 print(f"\n✨ TUTTI I MODELLI PRONTI! Il server è in ascolto sulla porta 8080.\n")
+
+# --- HELPER PER TRANSLATEGEMMA ---
+def extract_translation(output):
+    if not output:
+        raise ValueError("Empty generation output.")
+
+    generated_text = output[0].get("generated_text")
+    if isinstance(generated_text, list) and generated_text:
+        last_message = generated_text[-1]
+        if isinstance(last_message, dict):
+            content = last_message.get("content")
+            if isinstance(content, str) and content.strip():
+                return content.strip()
+    if isinstance(generated_text, str) and generated_text.strip():
+        return generated_text.strip()
+
+    raise ValueError(f"Unexpected TranslateGemma output format: {output}")
+
 
 # --- MODELLI DATI ---
 class TextRequest(BaseModel):
@@ -68,7 +103,15 @@ class ProcessedDocument(BaseModel):
 class ProcessResponse(BaseModel):
     results: List[ProcessedDocument]
 
-# --- PIPELINE ---
+class TranslateGemmaRequest(BaseModel):
+    source_lang_code: str
+    target_lang_code: str
+    text: str
+
+class TranslateGemmaResponse(BaseModel):
+    translation: str
+
+# --- PIPELINE E ENDPOINT ---
 @app.post("/process", response_model=ProcessResponse)
 async def process_pipeline(data: TextRequest):
     if not data.texts:
@@ -101,6 +144,31 @@ async def process_pipeline(data: TextRequest):
             ))
 
         return {"results": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/translate", response_model=TranslateGemmaResponse)
+async def translate_gemma_endpoint(data: TranslateGemmaRequest):
+    if not loaded_models.get('translategemma'):
+        raise HTTPException(status_code=503, detail="TranslateGemma model non è stato caricato correttamente")
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "source_lang_code": data.source_lang_code,
+                    "target_lang_code": data.target_lang_code,
+                    "text": data.text,
+                }
+            ],
+        }
+    ]
+    try:
+        output = loaded_models['translategemma'](text=messages, max_new_tokens=256)
+        translation = extract_translation(output)
+        return {"translation": translation}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
