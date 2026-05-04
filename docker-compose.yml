@@ -1,9 +1,9 @@
 services:
-  bert-api:
+  inference-server:
     build:
-      context: ./code/src/main/python
+      context: ./code/scripts
       dockerfile: Dockerfile
-    container_name: bert-server
+    container_name: inference-server
     ports:
       - "8080:8080"
     environment:
