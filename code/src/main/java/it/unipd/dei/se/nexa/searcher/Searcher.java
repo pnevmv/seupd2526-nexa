@@ -150,18 +150,40 @@ public class Searcher {
                     text = QueryExpansionUtil.expandQuery(text);
                 }
 
-                float[] queryEmbedding = null;
-                if (embeddingService != null) {
-                    queryEmbedding = embeddingService.getEmbedding(text);
+                ScoreDoc[] hits = new ScoreDoc[0];
+                Query lexicalQuery = null;
+                Query semanticQuery = null;
+
+                if ("lexical".equals(searchMode) || "hybrid".equals(searchMode)) {
+                    lexicalQuery = buildLexicalQuery(text);
                 }
 
-                final Query query = buildQuery(text, queryEmbedding);
-                if (query == null) {
-                    System.err.printf("Skipping claim with no analyzable terms: index=%d%n", claim.getIndex());
+                if ("semantic".equals(searchMode) || "hybrid".equals(searchMode)) {
+                    float[] queryEmbedding = null;
+                    if (embeddingService != null) {
+                        queryEmbedding = embeddingService.getEmbedding(text);
+                    }
+                    semanticQuery = buildSemanticQuery(queryEmbedding);
+                }
+
+                if ("hybrid".equals(searchMode)) {
+                    TopDocs lexDocs = lexicalQuery != null ? searcher.search(lexicalQuery, maxDocsRetrieved) : null;
+                    TopDocs semDocs = semanticQuery != null ? searcher.search(semanticQuery, maxDocsRetrieved) : null;
+                    hits = combineWithRRF(lexDocs, semDocs, maxDocsRetrieved);
+                } else if ("semantic".equals(searchMode)) {
+                    if (semanticQuery != null) {
+                        hits = searcher.search(semanticQuery, maxDocsRetrieved).scoreDocs;
+                    }
+                } else {
+                    if (lexicalQuery != null) {
+                        hits = searcher.search(lexicalQuery, maxDocsRetrieved).scoreDocs;
+                    }
+                }
+
+                if (hits == null || hits.length == 0) {
+                    System.err.printf("Skipping claim with no analyzable terms or vectors: index=%d%n", claim.getIndex());
                     continue;
                 }
-                final TopDocs topDocs = searcher.search(query, maxDocsRetrieved);
-                final ScoreDoc[] hits = topDocs.scoreDocs;
 
                 for (int rank = 0; rank < hits.length; rank++) {
                     final Document doc = storedFields.document(hits[rank].doc);
@@ -198,29 +220,57 @@ public class Searcher {
         }
     }
 
-    private Query buildQuery(final String text, final float[] queryEmbedding) {
+    private Query buildLexicalQuery(final String text) {
         final BooleanQuery.Builder builder = new BooleanQuery.Builder();
+        final Query titleQuery = queryBuilder.createBooleanQuery(titleField, text, BooleanClause.Occur.SHOULD);
+        final Query abstractQuery = queryBuilder.createBooleanQuery(abstractField, text, BooleanClause.Occur.SHOULD);
 
-        if ("lexical".equals(searchMode) || "hybrid".equals(searchMode)) {
-            final Query titleQuery = queryBuilder.createBooleanQuery(titleField, text, BooleanClause.Occur.SHOULD);
-            final Query abstractQuery = queryBuilder.createBooleanQuery(abstractField, text, BooleanClause.Occur.SHOULD);
-
-            if (titleQuery != null) {
-                builder.add(new BoostQuery(titleQuery, TITLE_BOOST), BooleanClause.Occur.SHOULD);
-            }
-            if (abstractQuery != null) {
-                builder.add(new BoostQuery(abstractQuery, ABSTRACT_BOOST), BooleanClause.Occur.SHOULD);
-            }
+        if (titleQuery != null) {
+            builder.add(new BoostQuery(titleQuery, TITLE_BOOST), BooleanClause.Occur.SHOULD);
         }
-
-        if (("semantic".equals(searchMode) || "hybrid".equals(searchMode)) && queryEmbedding != null && queryEmbedding.length > 0) {
-            Query vectorQuery = new KnnFloatVectorQuery("pub_vector", queryEmbedding, maxDocsRetrieved);
-            float VECTOR_BOOST = 2.0f;
-            builder.add(new BoostQuery(vectorQuery, VECTOR_BOOST), BooleanClause.Occur.SHOULD);
+        if (abstractQuery != null) {
+            builder.add(new BoostQuery(abstractQuery, ABSTRACT_BOOST), BooleanClause.Occur.SHOULD);
         }
 
         final BooleanQuery combined = builder.build();
         return combined.clauses().isEmpty() ? null : combined;
+    }
+
+    private Query buildSemanticQuery(final float[] queryEmbedding) {
+        if (queryEmbedding != null && queryEmbedding.length > 0) {
+            return new KnnFloatVectorQuery("pub_vector", queryEmbedding, maxDocsRetrieved);
+        }
+        return null;
+    }
+
+    private ScoreDoc[] combineWithRRF(TopDocs lexicalDocs, TopDocs semanticDocs, int maxResults) {
+        java.util.Map<Integer, Double> rrfScores = calculateRrfScores(lexicalDocs, semanticDocs);
+
+        java.util.List<java.util.Map.Entry<Integer, Double>> sorted = new java.util.ArrayList<>(rrfScores.entrySet());
+        sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+        ScoreDoc[] finalHits = new ScoreDoc[Math.min(maxResults, sorted.size())];
+        for (int i = 0; i < finalHits.length; i++) {
+            java.util.Map.Entry<Integer, Double> entry = sorted.get(i);
+            finalHits[i] = new ScoreDoc(entry.getKey(), entry.getValue().floatValue());
+        }
+        return finalHits;
+    }
+
+    private java.util.Map<Integer, Double> calculateRrfScores(TopDocs lexicalDocs, TopDocs semanticDocs) {
+        java.util.Map<Integer, Double> rrfScores = new java.util.HashMap<>();
+        int k = 60;
+
+        for (TopDocs docs : new TopDocs[]{lexicalDocs, semanticDocs}) {
+            if (docs != null && docs.scoreDocs != null) {
+                for (int i = 0; i < docs.scoreDocs.length; i++) {
+                    int docId = docs.scoreDocs[i].doc;
+                    double score = 1.0 / (k + i + 1);
+                    rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
+                }
+            }
+        }
+        return rrfScores;
     }
 
     private static boolean shouldTranslateClaim(final String sourceLanguage, final String targetLanguage) {
