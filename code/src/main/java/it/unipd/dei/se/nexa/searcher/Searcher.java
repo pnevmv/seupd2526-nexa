@@ -9,7 +9,9 @@ import it.unipd.dei.se.nexa.utility.ConfigManager;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import it.unipd.dei.se.nexa.utility.QueryExpansionUtil;
 import it.unipd.dei.se.nexa.utility.TranslationUtil;
+import it.unipd.dei.se.nexa.utility.EmbeddingService;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.search.KnnFloatVectorQuery;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -60,6 +62,8 @@ public class Searcher {
     private final int maxDocsRetrieved;
     private final String runID;
     private final Path runFile;
+    private final String searchMode;
+    private final EmbeddingService embeddingService;
 
     public Searcher(final Analyzer analyzer,
                     final Path indexDir,
@@ -83,6 +87,15 @@ public class Searcher {
         this.runID = runID;
         this.maxDocsRetrieved = maxDocsRetrieved;
         this.runFile = runDir.resolve(runID + ".txt");
+
+        final String modeStr = CONFIG.getString("searchMode");
+        this.searchMode = modeStr != null && !modeStr.isBlank() ? modeStr.toLowerCase(Locale.ROOT) : "lexical";
+
+        if ("semantic".equals(searchMode) || "hybrid".equals(searchMode)) {
+            this.embeddingService = new EmbeddingService(requireConfig("embeddingsServiceUrl"));
+        } else {
+            this.embeddingService = null;
+        }
     }
 
     public void search() throws Exception {
@@ -137,7 +150,12 @@ public class Searcher {
                     text = QueryExpansionUtil.expandQuery(text);
                 }
 
-                final Query query = buildQuery(text);
+                float[] queryEmbedding = null;
+                if (embeddingService != null) {
+                    queryEmbedding = embeddingService.getEmbedding(text);
+                }
+
+                final Query query = buildQuery(text, queryEmbedding);
                 if (query == null) {
                     System.err.printf("Skipping claim with no analyzable terms: index=%d%n", claim.getIndex());
                     continue;
@@ -180,16 +198,25 @@ public class Searcher {
         }
     }
 
-    private Query buildQuery(final String text) {
-        final Query titleQuery = queryBuilder.createBooleanQuery(titleField, text, BooleanClause.Occur.SHOULD);
-        final Query abstractQuery = queryBuilder.createBooleanQuery(abstractField, text, BooleanClause.Occur.SHOULD);
-
+    private Query buildQuery(final String text, final float[] queryEmbedding) {
         final BooleanQuery.Builder builder = new BooleanQuery.Builder();
-        if (titleQuery != null) {
-            builder.add(new BoostQuery(titleQuery, TITLE_BOOST), BooleanClause.Occur.SHOULD);
+
+        if ("lexical".equals(searchMode) || "hybrid".equals(searchMode)) {
+            final Query titleQuery = queryBuilder.createBooleanQuery(titleField, text, BooleanClause.Occur.SHOULD);
+            final Query abstractQuery = queryBuilder.createBooleanQuery(abstractField, text, BooleanClause.Occur.SHOULD);
+
+            if (titleQuery != null) {
+                builder.add(new BoostQuery(titleQuery, TITLE_BOOST), BooleanClause.Occur.SHOULD);
+            }
+            if (abstractQuery != null) {
+                builder.add(new BoostQuery(abstractQuery, ABSTRACT_BOOST), BooleanClause.Occur.SHOULD);
+            }
         }
-        if (abstractQuery != null) {
-            builder.add(new BoostQuery(abstractQuery, ABSTRACT_BOOST), BooleanClause.Occur.SHOULD);
+
+        if (("semantic".equals(searchMode) || "hybrid".equals(searchMode)) && queryEmbedding != null && queryEmbedding.length > 0) {
+            Query vectorQuery = new KnnFloatVectorQuery("pub_vector", queryEmbedding, maxDocsRetrieved);
+            float VECTOR_BOOST = 2.0f;
+            builder.add(new BoostQuery(vectorQuery, VECTOR_BOOST), BooleanClause.Occur.SHOULD);
         }
 
         final BooleanQuery combined = builder.build();

@@ -26,7 +26,7 @@ translationTargetLanguage: en
 translationCommand:
 
 # used when provider=gemma
-translationServiceUrl: http://127.0.0.1:8008/translate
+translationServiceUrl: http://127.0.0.1:8080/translate
 
 # --- query expansion ---
 
@@ -34,6 +34,9 @@ enableQueryExpansion: true
 queryExpansionServiceUrl: http://127.0.0.1:8001/expand
 
 # --- searching ---
+
+# searchMode: lexical (BM25 only), semantic (Vector only), hybrid (BM25 + Vector)
+searchMode: lexical
 
 # claims JSON: array of {index, text, pubkey?}
 # active preprocessed topics. Use the expanded path after running expand_claims.py.
