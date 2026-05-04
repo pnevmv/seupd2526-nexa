@@ -49,8 +49,6 @@ public class Searcher {
 
     private static final ConfigManager CONFIG = ConfigManager.getGlobalConfig();
 
-    private static final float TITLE_BOOST = 2.0f;
-    private static final float ABSTRACT_BOOST = 1.0f;
     private static final int PROGRESS_INTERVAL = 500;
 
     private final IndexReader reader;
@@ -259,11 +257,41 @@ public class Searcher {
         final Query titleQuery = queryBuilder.createBooleanQuery(titleField, text, BooleanClause.Occur.SHOULD);
         final Query abstractQuery = queryBuilder.createBooleanQuery(abstractField, text, BooleanClause.Occur.SHOULD);
 
+        Double titleBoostOpt = CONFIG.getDouble("titleBoost");
+        float titleBoost = titleBoostOpt != null ? titleBoostOpt.floatValue() : 2.0f;
+        Double absBoostOpt = CONFIG.getDouble("abstractBoost");
+        float abstractBoost = absBoostOpt != null ? absBoostOpt.floatValue() : 1.0f;
+
         if (titleQuery != null) {
-            builder.add(new BoostQuery(titleQuery, TITLE_BOOST), BooleanClause.Occur.SHOULD);
+            builder.add(new BoostQuery(titleQuery, titleBoost), BooleanClause.Occur.SHOULD);
         }
         if (abstractQuery != null) {
-            builder.add(new BoostQuery(abstractQuery, ABSTRACT_BOOST), BooleanClause.Occur.SHOULD);
+            builder.add(new BoostQuery(abstractQuery, abstractBoost), BooleanClause.Occur.SHOULD);
+        }
+
+        // Phrase Query (cerchiamo le parole vicine)
+        Double phraseBoostOpt = CONFIG.getDouble("phraseBoost");
+        if (phraseBoostOpt != null && phraseBoostOpt > 0) {
+            Query titlePhrase = queryBuilder.createPhraseQuery(titleField, text);
+            if (titlePhrase != null) {
+                builder.add(new BoostQuery(titlePhrase, phraseBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
+            }
+            Query abstractPhrase = queryBuilder.createPhraseQuery(abstractField, text);
+            if (abstractPhrase != null) {
+                builder.add(new BoostQuery(abstractPhrase, phraseBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
+            }
+        }
+
+        // Fuzzy Query (per tollerare gli errori di battitura)
+        Double fuzzyBoostOpt = CONFIG.getDouble("fuzzyBoost");
+        if (fuzzyBoostOpt != null && fuzzyBoostOpt > 0) {
+            String[] tokens = text.split("\\W+"); // dividiamo la frase in parole
+            for (String token : tokens) {
+                if (token.length() > 3) { // Applichiamo il fuzzy solo a parole lunghe
+                    builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(new org.apache.lucene.index.Term(titleField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
+                    builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(new org.apache.lucene.index.Term(abstractField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
+                }
+            }
         }
 
         final BooleanQuery combined = builder.build();
@@ -293,17 +321,31 @@ public class Searcher {
 
     private java.util.Map<Integer, Double> calculateRrfScores(TopDocs lexicalDocs, TopDocs semanticDocs) {
         java.util.Map<Integer, Double> rrfScores = new java.util.HashMap<>();
-        int k = 60;
 
-        for (TopDocs docs : new TopDocs[]{lexicalDocs, semanticDocs}) {
-            if (docs != null && docs.scoreDocs != null) {
-                for (int i = 0; i < docs.scoreDocs.length; i++) {
-                    int docId = docs.scoreDocs[i].doc;
-                    double score = 1.0 / (k + i + 1);
-                    rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
-                }
+        Double kOpt = CONFIG.getDouble("rrfK");
+        int k = kOpt != null ? kOpt.intValue() : 60;
+
+        Double alphaOpt = CONFIG.getDouble("rrfAlpha");
+        double alpha = alphaOpt != null ? alphaOpt : 0.5;
+
+        if (lexicalDocs != null && lexicalDocs.scoreDocs != null) {
+            for (int i = 0; i < lexicalDocs.scoreDocs.length; i++) {
+                int docId = lexicalDocs.scoreDocs[i].doc;
+                // Weighted RRF: applichiamo alpha alla ricerca testuale
+                double score = alpha * (1.0 / (k + i + 1));
+                rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
             }
         }
+
+        if (semanticDocs != null && semanticDocs.scoreDocs != null) {
+            for (int i = 0; i < semanticDocs.scoreDocs.length; i++) {
+                int docId = semanticDocs.scoreDocs[i].doc;
+                // Weighted RRF: applichiamo (1 - alpha) alla ricerca semantica
+                double score = (1.0 - alpha) * (1.0 / (k + i + 1));
+                rrfScores.put(docId, rrfScores.getOrDefault(docId, 0.0) + score);
+            }
+        }
+
         return rrfScores;
     }
 

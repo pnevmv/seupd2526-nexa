@@ -69,3 +69,15 @@ maxDocsRetrieved: 50
 # reRank: true
 # reRankServiceUrl: http://127.0.0.1:8080/rerank
 # numOfDocsToRerank: 100
+
+# --- hybrid search weights ---
+#lexical trust, if the alpha value is higher more lexical trust is done, if it is lower semantical trust
+#rrfAlpha: 0.6
+#keep 60, proved to be the best value
+#rrfK: 60
+
+# --- lexical query weights ---
+#phraseBoost: 1.5
+#fuzzyBoost: 0.3
+#titleBoost: 2.0
+#abstractBoost: 1.0
