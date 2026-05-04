@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${SCRIPT_DIR}/translategemma.env"
-VENV_PYTHON="${SCRIPT_DIR}/.venv/bin/python3"
+VENV_PYTHON="${SCRIPT_DIR}/../.venv/bin/python3"
 
 if [[ -f "${ENV_FILE}" ]]; then
   # shellcheck disable=SC1090
@@ -20,4 +20,4 @@ if [[ -x "${VENV_PYTHON}" ]]; then
   PYTHON_BIN="${VENV_PYTHON}"
 fi
 
-exec "${PYTHON_BIN}" "${SCRIPT_DIR}/inference_server.py" "$@"
+exec "${PYTHON_BIN}" "${SCRIPT_DIR}/translation_server.py" "$@"

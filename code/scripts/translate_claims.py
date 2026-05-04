@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 LANG_SPLIT_PATTERN = re.compile(r"^(de|en|fr)_(train|dev)\.json$", re.IGNORECASE)
-DEFAULT_SERVICE_URL = "http://127.0.0.1:8080/translate"
+DEFAULT_SERVICE_URL = "http://127.0.0.1:8081/translate"
 
 
 def parse_args():

@@ -108,6 +108,10 @@ public class Searcher {
         if (processor.translatesClaimsToEnglish() && claimsLanguage != null) {
             System.out.println("Claims language inferred from topics file: " + claimsLanguage);
         }
+        if (processor.translatesClaimsToEnglish()) {
+            System.out.println("[WARNING] Claim translation is enabled — make sure the translation server is running first:");
+            System.out.println("          bash code/scripts/run_translategemma_server.sh");
+        }
         final long start = System.currentTimeMillis();
 
         try (RunWriter run = new RunWriter(runFile, runID)) {

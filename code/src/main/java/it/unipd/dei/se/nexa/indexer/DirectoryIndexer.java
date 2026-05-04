@@ -54,6 +54,11 @@ public class DirectoryIndexer {
         final String embeddingsServiceUrl = config.getString("embeddingsServiceUrl");
         final EmbeddingService embeddingService = embeddingsEnabled ? new EmbeddingService(embeddingsServiceUrl) : null;
 
+        if (translateNonEnglishToEnglish) {
+            System.out.println("[WARNING] Translation is enabled — make sure the translation server is running first:");
+            System.out.println("          bash code/scripts/run_translategemma_server.sh");
+        }
+
         System.out.println("Starting the indexing" + docsDir.toAbsolutePath());
         System.out.println("Translate non-English publications to " + translationTargetLanguage + ": "
                 + translateNonEnglishToEnglish);
