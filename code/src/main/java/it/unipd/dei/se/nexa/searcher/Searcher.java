@@ -257,10 +257,10 @@ public class Searcher {
     }
 
     public static void main(String[] args) throws Exception {
-        final Path indexDir = Paths.get(requireConfig("indexPath"));
-        final Path topicsFile = Paths.get(requireConfig("topics"));
+        final Path indexDir = ConfigManager.resolvePath(requireConfig("indexPath"));
+        final Path topicsFile = ConfigManager.resolvePath(requireConfig("topics"));
         final String runID = requireConfig("runID");
-        final Path runDir = Paths.get(requireConfig("runPath"));
+        final Path runDir = ConfigManager.resolvePath(requireConfig("runPath"));
         final int maxDocsRetrieved = CONFIG.getInt("maxDocsRetrieved");
 
         Files.createDirectories(runDir);

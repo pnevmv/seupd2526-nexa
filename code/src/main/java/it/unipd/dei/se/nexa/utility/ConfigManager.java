@@ -30,6 +30,9 @@ public class ConfigManager {
             Paths.get("code/src/main/config")
     };
 
+    // Project root derived from whichever config candidate matched
+    private static Path projectRoot;
+
     /**
      * Private constructor to load a specific file from the config directory.
      */
@@ -105,14 +108,30 @@ public class ConfigManager {
         return config != null && config.containsKey(key);
     }
 
+    /**
+     * Resolves a path from config relative to the project root, regardless of CWD.
+     * If the path is already absolute, returns it as-is.
+     */
+    public static Path resolvePath(String relativePath) {
+        if (relativePath == null) return null;
+        Path p = Paths.get(relativePath);
+        if (p.isAbsolute()) return p;
+        if (projectRoot == null) getGlobalConfig();
+        return projectRoot.resolve(p).normalize();
+    }
+
     private static Path resolveConfigFile(final String fileName) {
-        for (Path configDir : CONFIG_DIR_CANDIDATES) {
-            Path candidate = configDir.resolve(fileName);
+        Path cwd = Paths.get("").toAbsolutePath();
+        for (int i = 0; i < CONFIG_DIR_CANDIDATES.length; i++) {
+            Path candidate = CONFIG_DIR_CANDIDATES[i].resolve(fileName);
             if (Files.isReadable(candidate)) {
+                // candidate 0 = "src/main/config" means CWD is code/, root is one level up
+                // candidate 1 = "code/src/main/config" means CWD is the repo root
+                projectRoot = (i == 0) ? cwd.getParent() : cwd;
                 return candidate;
             }
         }
-
+        projectRoot = cwd;
         return CONFIG_DIR_CANDIDATES[0].resolve(fileName);
     }
 }

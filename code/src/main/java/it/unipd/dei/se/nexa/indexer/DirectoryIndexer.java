@@ -189,12 +189,12 @@ public class DirectoryIndexer {
                 System.out.println("Usage: DirectoryIndexer <collectionJsonOrDir> [indexDir]");
                 return;
             }
-            inputPath = Paths.get(configuredCollectionPath);
+            inputPath = ConfigManager.resolvePath(configuredCollectionPath);
         }
 
         final Path indexPath = args.length >= 2
                 ? Paths.get(args[1])
-                : Path.of(config.getString("indexPath"));
+                : ConfigManager.resolvePath(config.getString("indexPath"));
 
         try (Analyzer analyzer = buildLanguageAwareAnalyzer()) {
             System.out.println("DirectoryIndexer...");
