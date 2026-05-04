@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, CrossEncoder
 from easynmt import EasyNMT
 from transformers import pipeline
 import fasttext
@@ -63,6 +63,15 @@ def load_models():
         print(f"❌ Errore nel caricamento di TranslateGemma: {e}")
         models['translategemma'] = None
 
+    # 6. Reranker (Cross-Encoder)
+    start = time.time()
+    try:
+        models['reranker'] = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', device=device)
+        print(f"✅ [6/6] Cross-Encoder Reranker caricato in: {time.time() - start:.2f}s")
+    except Exception as e:
+        print(f"❌ Errore nel caricamento del Reranker: {e}")
+        models['reranker'] = None
+
     return models
 
 # Carichiamo tutto all'avvio
@@ -110,6 +119,13 @@ class TranslateGemmaRequest(BaseModel):
 
 class TranslateGemmaResponse(BaseModel):
     translation: str
+
+class RerankRequest(BaseModel):
+    query: str
+    documents: List[str]
+
+class RerankResponse(BaseModel):
+    scores: List[float]
 
 # --- PIPELINE E ENDPOINT ---
 @app.post("/process", response_model=ProcessResponse)
@@ -169,6 +185,23 @@ async def translate_gemma_endpoint(data: TranslateGemmaRequest):
         output = loaded_models['translategemma'](text=messages, max_new_tokens=256)
         translation = extract_translation(output)
         return {"translation": translation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/rerank", response_model=RerankResponse)
+async def rerank_endpoint(data: RerankRequest):
+    if not loaded_models.get('reranker'):
+        raise HTTPException(status_code=503, detail="Reranker model non è stato caricato correttamente")
+
+    if not data.documents:
+        return {"scores": []}
+
+    pairs = [[data.query, doc] for doc in data.documents]
+    try:
+        scores = loaded_models['reranker'].predict(pairs).tolist()
+        if isinstance(scores, float):
+            scores = [scores]
+        return {"scores": scores}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -10,6 +10,7 @@ import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import it.unipd.dei.se.nexa.utility.QueryExpansionUtil;
 import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import it.unipd.dei.se.nexa.utility.EmbeddingService;
+import it.unipd.dei.se.nexa.utility.RerankService;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.search.KnnFloatVectorQuery;
 import org.apache.lucene.document.Document;
@@ -64,6 +65,7 @@ public class Searcher {
     private final Path runFile;
     private final String searchMode;
     private final EmbeddingService embeddingService;
+    private final RerankService rerankService;
 
     public Searcher(final Analyzer analyzer,
                     final Path indexDir,
@@ -95,6 +97,13 @@ public class Searcher {
             this.embeddingService = new EmbeddingService(requireConfig("embeddingsServiceUrl"));
         } else {
             this.embeddingService = null;
+        }
+
+        final Boolean reRank = CONFIG.getBool("reRank");
+        if (reRank != null && reRank) {
+            this.rerankService = new RerankService(requireConfig("reRankServiceUrl"));
+        } else {
+            this.rerankService = null;
         }
     }
 
@@ -183,6 +192,31 @@ public class Searcher {
                 if (hits == null || hits.length == 0) {
                     System.err.printf("Skipping claim with no analyzable terms or vectors: index=%d%n", claim.getIndex());
                     continue;
+                }
+
+                if (rerankService != null) {
+                    int numToRerank = Math.min(hits.length, CONFIG.getInt("numOfDocsToRerank"));
+                    ScoreDoc[] topHits = new ScoreDoc[numToRerank];
+                    System.arraycopy(hits, 0, topHits, 0, numToRerank);
+
+                    java.util.List<String> docTexts = new java.util.ArrayList<>();
+                    for (ScoreDoc hit : topHits) {
+                        Document doc = storedFields.document(hit.doc);
+                        String title = doc.get(titleField);
+                        String abs = doc.get(abstractField);
+                        String content = (title != null ? title : "") + " " + (abs != null ? abs : "");
+                        docTexts.add(content.trim());
+                    }
+
+                    float[] newScores = rerankService.rerank(text, docTexts);
+                    for (int i = 0; i < topHits.length; i++) {
+                        if (i < newScores.length) {
+                            topHits[i].score = newScores[i];
+                        }
+                    }
+
+                    java.util.Arrays.sort(topHits, (a, b) -> Float.compare(b.score, a.score));
+                    System.arraycopy(topHits, 0, hits, 0, topHits.length);
                 }
 
                 for (int rank = 0; rank < hits.length; rank++) {
