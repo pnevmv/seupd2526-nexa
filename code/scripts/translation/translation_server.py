@@ -22,7 +22,7 @@ if not os.environ.get("HF_TOKEN"):
 def load_model():
     start = time.time()
     try:
-        torch_dtype = torch.float16 if device == "mps" else (torch.bfloat16 if torch.cuda.is_available() else torch.float32)
+        torch_dtype = torch.bfloat16 if device in ("mps", "cuda") else torch.float32
         model = pipeline(
             "image-text-to-text",
             model="google/translategemma-4b-it",
@@ -83,4 +83,4 @@ def health():
 
 
 if __name__ == "__main__":
-    uvicorn.run("translation_server:app", host="0.0.0.0", port=8081, reload=False, workers=1)
+    uvicorn.run(app, host="0.0.0.0", port=8081, reload=False)
