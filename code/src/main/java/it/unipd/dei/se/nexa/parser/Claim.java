@@ -22,7 +22,7 @@ public class Claim {
     }
 
     @JsonProperty("pubkey")
-    private int pubkey;
+    private Integer pubkey;
 
     @JsonProperty("translation_provider")
     private String translationProvider;
@@ -36,6 +36,11 @@ public class Claim {
     @JsonProperty("query_expansion_combined")
     private boolean queryExpansionCombined;
 
+    @JsonProperty("original_text")
+    private String originalText;
+
+    private String language;
+
     @Override
     public String toString() {
         return "Claim n°" + index +
@@ -47,12 +52,36 @@ public class Claim {
         return index;
     }
 
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
     public String getText() {
         return text;
     }
 
-    public int getPubkey() {
+    public Integer getPubkey() {
         return pubkey;
+    }
+
+    public void setPubkey(Integer pubkey) {
+        this.pubkey = pubkey;
+    }
+
+    public String getOriginalText() {
+        return originalText;
+    }
+
+    public void setOriginalText(String originalText) {
+        this.originalText = originalText;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public boolean hasMaterializedTranslation(final String expectedTargetLanguage) {
