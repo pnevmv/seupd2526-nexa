@@ -81,3 +81,10 @@ maxDocsRetrieved: 50
 #fuzzyBoost: 0.3
 #titleBoost: 2.0
 #abstractBoost: 1.0
+
+# --- custom additions ---
+rrfAlphaShortQuery: 0.8
+rrfAlphaLongQuery: 0.2
+rerankAlpha: 0.6
+bm25_k1: 1.2
+bm25_b: 0.75

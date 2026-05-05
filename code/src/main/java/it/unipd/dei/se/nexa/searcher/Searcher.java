@@ -86,7 +86,7 @@ public class Searcher {
         this.queryBuilder = new QueryBuilder(analyzer);
 
         this.claims = new ObjectMapper().readValue(topicsFile.toFile(),
-                new TypeReference<>() {
+                new TypeReference<List<Claim>>() {
                 });
         this.claimsLanguage = inferClaimsLanguage(topicsFile);
 
