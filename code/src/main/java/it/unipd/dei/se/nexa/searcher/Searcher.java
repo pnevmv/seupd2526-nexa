@@ -36,7 +36,8 @@ import java.util.Locale;
 /**
  * Document searcher.
  *
- * <p>For each claim it parses the text, queries the English-localized title
+ * <p>
+ * For each claim it parses the text, queries the English-localized title
  * and abstract fields produced by {@link Publication#toLuceneDocument(String)}
  * and writes the top hits to a TREC-formatted run file.
  */
@@ -59,6 +60,7 @@ public class Searcher {
     private final String searchMode;
     private final EmbeddingService embeddingService;
     private final RerankService rerankService;
+    private final Analyzer analyzer;
 
     public Searcher(final Analyzer analyzer,
                     final Path indexDir,
@@ -67,6 +69,7 @@ public class Searcher {
                     final Path runDir,
                     final int maxDocsRetrieved) throws IOException {
 
+        this.analyzer = analyzer;
         this.reader = DirectoryReader.open(FSDirectory.open(indexDir));
         this.searcher = new IndexSearcher(reader);
 
@@ -83,7 +86,8 @@ public class Searcher {
         this.queryBuilder = new QueryBuilder(analyzer);
 
         this.claims = new ObjectMapper().readValue(topicsFile.toFile(),
-                new TypeReference<List<Claim>>() {});
+                new TypeReference<List<Claim>>() {
+                });
         this.claimsLanguage = inferClaimsLanguage(topicsFile);
 
         this.runID = runID;
@@ -116,7 +120,8 @@ public class Searcher {
             System.out.println("Claims language inferred from topics file: " + claimsLanguage);
         }
         if (processor.translatesClaimsToEnglish()) {
-            System.out.println("[WARNING] Claim translation is enabled — make sure the translation server is running first:");
+            System.out.println(
+                    "[WARNING] Claim translation is enabled — make sure the translation server is running first:");
             System.out.println("          bash code/scripts/run_translategemma_server.sh");
         }
         final long start = System.currentTimeMillis();
@@ -154,6 +159,38 @@ public class Searcher {
 
                 if ("lexical".equals(searchMode) || "hybrid".equals(searchMode)) {
                     lexicalQuery = buildLexicalQuery(text);
+
+                    // PRF
+                    Boolean prfEnabled = CONFIG.getBool("prf");
+                    if (prfEnabled != null && prfEnabled && lexicalQuery != null) {
+                        int prfDocs = CONFIG.getInt("numOfDocsToRetrieveForPrf") != null
+                                ? CONFIG.getInt("numOfDocsToRetrieveForPrf")
+                                : 3;
+                        int prfTerms = CONFIG.getInt("numOfTokenFromPrf") != null ? CONFIG.getInt("numOfTokenFromPrf")
+                                : 5;
+
+                        TopDocs initialDocs = searcher.search(lexicalQuery, prfDocs);
+                        if (initialDocs.scoreDocs.length > 0) {
+                            java.util.List<String> extraTerms = extractPrfTerms(initialDocs, prfTerms);
+                            if (!extraTerms.isEmpty()) {
+                                BooleanQuery.Builder expandedBuilder = new BooleanQuery.Builder();
+                                expandedBuilder.add(lexicalQuery, BooleanClause.Occur.SHOULD);
+                                for (String term : extraTerms) {
+                                    expandedBuilder.add(
+                                            new BoostQuery(new org.apache.lucene.search.TermQuery(
+                                                    new org.apache.lucene.index.Term(titleField, term)), 0.3f),
+                                            BooleanClause.Occur.SHOULD);
+                                    expandedBuilder
+                                            .add(new BoostQuery(
+                                                    new org.apache.lucene.search.TermQuery(
+                                                            new org.apache.lucene.index.Term(abstractField, term)),
+                                                    0.3f), BooleanClause.Occur.SHOULD);
+                                }
+                                lexicalQuery = expandedBuilder.build();
+                            }
+                        }
+                    }
+
                 }
 
                 if ("semantic".equals(searchMode) || "hybrid".equals(searchMode)) {
@@ -179,7 +216,8 @@ public class Searcher {
                 }
 
                 if (hits == null || hits.length == 0) {
-                    System.err.printf("Skipping claim with no analyzable terms or vectors: index=%d%n", claim.getIndex());
+                    System.err.printf("Skipping claim with no analyzable terms or vectors: index=%d%n",
+                            claim.getIndex());
                     continue;
                 }
 
@@ -199,11 +237,14 @@ public class Searcher {
 
                     float[] newScores = rerankService.rerank(text, docTexts);
 
+                    // 1. Min-Max normalization per gli score originali
                     float minOrig = Float.MAX_VALUE;
                     float maxOrig = -Float.MAX_VALUE;
                     for (ScoreDoc hit : topHits) {
-                        if (hit.score < minOrig) minOrig = hit.score;
-                        if (hit.score > maxOrig) maxOrig = hit.score;
+                        if (hit.score < minOrig)
+                            minOrig = hit.score;
+                        if (hit.score > maxOrig)
+                            maxOrig = hit.score;
                     }
                     if (maxOrig > minOrig) {
                         for (ScoreDoc hit : topHits) {
@@ -211,11 +252,14 @@ public class Searcher {
                         }
                     }
 
+                    // 2. Min-Max normalization per i nuovi score (Reranker)
                     float minNew = Float.MAX_VALUE;
                     float maxNew = -Float.MAX_VALUE;
                     for (float s : newScores) {
-                        if (s < minNew) minNew = s;
-                        if (s > maxNew) maxNew = s;
+                        if (s < minNew)
+                            minNew = s;
+                        if (s > maxNew)
+                            maxNew = s;
                     }
                     if (maxNew > minNew) {
                         for (int i = 0; i < newScores.length; i++) {
@@ -223,6 +267,7 @@ public class Searcher {
                         }
                     }
 
+                    // 3. Interpolazione score
                     Double alphaOpt = CONFIG.getDouble("rerankAlpha");
                     float alpha = alphaOpt != null ? alphaOpt.floatValue() : 0.6f;
 
@@ -304,8 +349,16 @@ public class Searcher {
             String[] tokens = text.split("\\W+");
             for (String token : tokens) {
                 if (token.length() > 3) {
-                    builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(new org.apache.lucene.index.Term(titleField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
-                    builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(new org.apache.lucene.index.Term(abstractField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
+                    builder.add(
+                            new BoostQuery(
+                                    new org.apache.lucene.search.FuzzyQuery(
+                                            new org.apache.lucene.index.Term(titleField, token), 1),
+                                    fuzzyBoostOpt.floatValue()),
+                            BooleanClause.Occur.SHOULD);
+                    builder.add(new BoostQuery(
+                            new org.apache.lucene.search.FuzzyQuery(
+                                    new org.apache.lucene.index.Term(abstractField, token), 1),
+                            fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
                 }
             }
         }
@@ -380,6 +433,38 @@ public class Searcher {
         }
 
         return null;
+    }
+
+    private java.util.List<String> extractPrfTerms(TopDocs topDocs, int numTerms) throws IOException {
+        java.util.Map<String, Integer> termFreq = new java.util.HashMap<>();
+        org.apache.lucene.index.StoredFields storedFields = reader.storedFields();
+
+        for (ScoreDoc hit : topDocs.scoreDocs) {
+            Document doc = storedFields.document(hit.doc);
+            String title = doc.get(titleField);
+            String abs = doc.get(abstractField);
+            String content = (title != null ? title : "") + " " + (abs != null ? abs : "");
+
+            try (org.apache.lucene.analysis.TokenStream stream = analyzer.tokenStream("dummy",
+                    new java.io.StringReader(content))) {
+                stream.reset();
+                org.apache.lucene.analysis.tokenattributes.CharTermAttribute termAtt = stream
+                        .addAttribute(org.apache.lucene.analysis.tokenattributes.CharTermAttribute.class);
+                while (stream.incrementToken()) {
+                    String term = termAtt.toString();
+                    if (term.length() > 2 && !term.matches(".*\\d.*")) { // ignora numeri e parole corte
+                        termFreq.put(term, termFreq.getOrDefault(term, 0) + 1);
+                    }
+                }
+                stream.end();
+            }
+        }
+
+        return termFreq.entrySet().stream()
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                .limit(numTerms)
+                .map(java.util.Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private static String requireConfig(final String key) {
