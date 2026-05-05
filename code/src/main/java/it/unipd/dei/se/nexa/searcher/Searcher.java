@@ -69,7 +69,14 @@ public class Searcher {
 
         this.reader = DirectoryReader.open(FSDirectory.open(indexDir));
         this.searcher = new IndexSearcher(reader);
-        this.searcher.setSimilarity(new BM25Similarity());
+
+        Double k1Opt = CONFIG.getDouble("bm25_k1");
+        float k1 = k1Opt != null ? k1Opt.floatValue() : 1.2f;
+
+        Double bOpt = CONFIG.getDouble("bm25_b");
+        float b = bOpt != null ? bOpt.floatValue() : 0.75f;
+
+        this.searcher.setSimilarity(new BM25Similarity(k1, b));
 
         this.titleField = Publication.getLocalizedFieldName(Publication.FIELD_TITLE, "en");
         this.abstractField = Publication.getLocalizedFieldName(Publication.FIELD_ABSTRACT, "en");
@@ -191,9 +198,37 @@ public class Searcher {
                     }
 
                     float[] newScores = rerankService.rerank(text, docTexts);
+
+                    float minOrig = Float.MAX_VALUE;
+                    float maxOrig = -Float.MAX_VALUE;
+                    for (ScoreDoc hit : topHits) {
+                        if (hit.score < minOrig) minOrig = hit.score;
+                        if (hit.score > maxOrig) maxOrig = hit.score;
+                    }
+                    if (maxOrig > minOrig) {
+                        for (ScoreDoc hit : topHits) {
+                            hit.score = (hit.score - minOrig) / (maxOrig - minOrig);
+                        }
+                    }
+
+                    float minNew = Float.MAX_VALUE;
+                    float maxNew = -Float.MAX_VALUE;
+                    for (float s : newScores) {
+                        if (s < minNew) minNew = s;
+                        if (s > maxNew) maxNew = s;
+                    }
+                    if (maxNew > minNew) {
+                        for (int i = 0; i < newScores.length; i++) {
+                            newScores[i] = (newScores[i] - minNew) / (maxNew - minNew);
+                        }
+                    }
+
+                    Double alphaOpt = CONFIG.getDouble("rerankAlpha");
+                    float alpha = alphaOpt != null ? alphaOpt.floatValue() : 0.6f;
+
                     for (int i = 0; i < topHits.length; i++) {
                         if (i < newScores.length) {
-                            topHits[i].score = newScores[i];
+                            topHits[i].score = (1.0f - alpha) * topHits[i].score + alpha * newScores[i];
                         }
                     }
 
