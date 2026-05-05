@@ -60,3 +60,5 @@ customStopList: src/main/resources/fr/stoplists/BstoplistFR.txt
 
 #type of stemmer to use for French: select on from [FrenchMinimal, FrenchLight, SnowBall, Nlp, None]
 stemFilter: Nlp
+
+

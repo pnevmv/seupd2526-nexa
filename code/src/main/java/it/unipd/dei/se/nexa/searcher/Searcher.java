@@ -10,18 +10,12 @@ import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import it.unipd.dei.se.nexa.utility.EmbeddingService;
 import it.unipd.dei.se.nexa.utility.RerankService;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.search.KnnFloatVectorQuery;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.StoredFields;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BoostQuery;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.QueryBuilder;
@@ -30,8 +24,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+
+import static it.unipd.dei.se.nexa.searcher.SearcherUtil.getRelatedTermsFromLLM;
 
 /**
  * Document searcher.
@@ -237,7 +236,6 @@ public class Searcher {
 
                     float[] newScores = rerankService.rerank(text, docTexts);
 
-                    // 1. Min-Max normalization per gli score originali
                     float minOrig = Float.MAX_VALUE;
                     float maxOrig = -Float.MAX_VALUE;
                     for (ScoreDoc hit : topHits) {
@@ -252,7 +250,6 @@ public class Searcher {
                         }
                     }
 
-                    // 2. Min-Max normalization per i nuovi score (Reranker)
                     float minNew = Float.MAX_VALUE;
                     float maxNew = -Float.MAX_VALUE;
                     for (float s : newScores) {
@@ -267,7 +264,6 @@ public class Searcher {
                         }
                     }
 
-                    // 3. Interpolazione score
                     Double alphaOpt = CONFIG.getDouble("rerankAlpha");
                     float alpha = alphaOpt != null ? alphaOpt.floatValue() : 0.6f;
 
@@ -362,6 +358,30 @@ public class Searcher {
                 }
             }
         }
+
+        //query expansion with synonyms
+        /*if (Boolean.TRUE.equals(config.getBool("synonyms")) && !isBig) {
+            List<String> synonyms = SearcherUtil.queryAnalyzer(
+                    new Synonym(SearcherUtil.mapToSynonymMap(SearcherUtil.readSynonyms(config.getString("synonymsFile")))),
+                    queryTitle);
+            for (String synonym : synonyms) {
+                String[] split = synonym.split(",");
+                if (split.length > 1) {
+                    List<String> tmpSynonyms = new ArrayList<>(Arrays.asList(split));
+                    for (String tmpSynonym : tmpSynonyms)
+                        booleanQuery.add(new BoostQuery(new TermQuery(new Term("body", tmpSynonym)), 1f/tmpSynonyms.size()), BooleanClause.Occur.SHOULD);
+                }
+            }
+        }
+
+        //query expansion with LLM
+        if (Boolean.TRUE.equals(config.getBool("useLLMExpansion"))) {
+            String[] relatedTerms = getRelatedTermsFromLLM(queryTitle, config.getOpenApiKey());
+
+            for (String relatedTerm : relatedTerms)
+                booleanQuery.add(new BoostQuery(new TermQuery(new Term("body", relatedTerm)), 0.4f), BooleanClause.Occur.SHOULD);
+
+        }*/
 
         final BooleanQuery combined = builder.build();
         return combined.clauses().isEmpty() ? null : combined;

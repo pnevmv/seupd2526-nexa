@@ -72,15 +72,15 @@ maxDocsRetrieved: 50
 
 # --- hybrid search weights ---
 #lexical trust, if the alpha value is higher more lexical trust is done, if it is lower semantical trust
-rrfAlpha: 0.6
+#rrfAlpha: 0.6
 #keep 60, proved to be the best value
-rrfK: 60
+#rrfK: 60
 
 # --- lexical query weights ---
-phraseBoost: 1.5
-fuzzyBoost: 0.3
-titleBoost: 2.0
-abstractBoost: 1.0
+#phraseBoost: 1.5
+#fuzzyBoost: 0.3
+#titleBoost: 2.0
+#abstractBoost: 1.0
 
 # --- custom additions ---
 rrfAlphaShortQuery: 0.8
