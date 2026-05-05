@@ -237,7 +237,6 @@ public class Searcher {
 
                     float[] newScores = rerankService.rerank(text, docTexts);
 
-                    // 1. Min-Max normalization per gli score originali
                     float minOrig = Float.MAX_VALUE;
                     float maxOrig = -Float.MAX_VALUE;
                     for (ScoreDoc hit : topHits) {
@@ -252,7 +251,6 @@ public class Searcher {
                         }
                     }
 
-                    // 2. Min-Max normalization per i nuovi score (Reranker)
                     float minNew = Float.MAX_VALUE;
                     float maxNew = -Float.MAX_VALUE;
                     for (float s : newScores) {
@@ -267,7 +265,6 @@ public class Searcher {
                         }
                     }
 
-                    // 3. Interpolazione score
                     Double alphaOpt = CONFIG.getDouble("rerankAlpha");
                     float alpha = alphaOpt != null ? alphaOpt.floatValue() : 0.6f;
 
