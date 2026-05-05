@@ -2,7 +2,7 @@
 
 # --- indexing ---
 
-collectionPath: datasets/processed/documents/collection_data.json
+collectionPath: /Volumes/KINGSTON/collection_data.json
 indexPath: "experiment/index"
 
 # resolved relative to repo root or code/
@@ -64,23 +64,23 @@ maxDocsRetrieved: 50
 # phrase: false
 # useWord2Vec: false
 # prf: false
-# numOfDocsToRetrieveForPrf: 5
-# numOfTokenFromPrf: 4
+numOfDocsToRetrieveForPrf: 5
+numOfTokenFromPrf: 4
 # reRank: true
 # reRankServiceUrl: http://127.0.0.1:8080/rerank
 # numOfDocsToRerank: 100
 
 # --- hybrid search weights ---
 #lexical trust, if the alpha value is higher more lexical trust is done, if it is lower semantical trust
-#rrfAlpha: 0.6
+rrfAlpha: 0.6
 #keep 60, proved to be the best value
-#rrfK: 60
+rrfK: 60
 
 # --- lexical query weights ---
-#phraseBoost: 1.5
-#fuzzyBoost: 0.3
-#titleBoost: 2.0
-#abstractBoost: 1.0
+phraseBoost: 1.5
+fuzzyBoost: 0.7
+titleBoost: 2.0
+abstractBoost: 1.0
 
 # --- custom additions ---
 rrfAlphaShortQuery: 0.8
@@ -88,3 +88,4 @@ rrfAlphaLongQuery: 0.2
 rerankAlpha: 0.6
 bm25_k1: 1.2
 bm25_b: 0.75
+
