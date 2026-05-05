@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Locale;
 
 
-import static it.unipd.dei.se.nexa.searcher.SearcherUtil.getRelatedTermsFromLLM;
 
 /**
  * Document searcher.
