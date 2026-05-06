@@ -359,28 +359,39 @@ public class Searcher {
         }
 
         //query expansion with synonyms
-        /*if (Boolean.TRUE.equals(config.getBool("synonyms")) && !isBig) {
-            List<String> synonyms = SearcherUtil.queryAnalyzer(
-                    new Synonym(SearcherUtil.mapToSynonymMap(SearcherUtil.readSynonyms(config.getString("synonymsFile")))),
-                    queryTitle);
-            for (String synonym : synonyms) {
-                String[] split = synonym.split(",");
-                if (split.length > 1) {
-                    List<String> tmpSynonyms = new ArrayList<>(Arrays.asList(split));
-                    for (String tmpSynonym : tmpSynonyms)
-                        booleanQuery.add(new BoostQuery(new TermQuery(new Term("body", tmpSynonym)), 1f/tmpSynonyms.size()), BooleanClause.Occur.SHOULD);
+        if (Boolean.TRUE.equals(CONFIG.getBool("synonyms"))) {
+            try {
+                String synFile = CONFIG.getString("synonymsFile");
+                if (synFile != null) {
+                    java.util.Map<String, String[]> synMap = SearcherUtil.readSynonyms(synFile);
+                    for (String token : text.split("\\W+")) {
+                        if (synMap.containsKey(token)) {
+                            for (String syn : synMap.get(token)) {
+                                builder.add(new BoostQuery(new org.apache.lucene.search.TermQuery(new org.apache.lucene.index.Term(abstractField, syn)), 0.5f), BooleanClause.Occur.SHOULD);
+                            }
+                        }
+                    }
                 }
+            } catch (Exception e) {
+                System.err.println("Failed to read synonyms: " + e.getMessage());
             }
         }
 
         //query expansion with LLM
-        if (Boolean.TRUE.equals(config.getBool("useLLMExpansion"))) {
-            String[] relatedTerms = getRelatedTermsFromLLM(queryTitle, config.getOpenApiKey());
-
-            for (String relatedTerm : relatedTerms)
-                booleanQuery.add(new BoostQuery(new TermQuery(new Term("body", relatedTerm)), 0.4f), BooleanClause.Occur.SHOULD);
-
-        }*/
+        if (Boolean.TRUE.equals(CONFIG.getBool("useLLMExpansion"))) {
+            try {
+                String openApiKey = CONFIG.getString("openApiKey");
+                if (openApiKey != null && !openApiKey.isBlank()) {
+                    String[] relatedTerms = SearcherUtil.getRelatedTermsFromLLM(text, openApiKey);
+                    for (String relatedTerm : relatedTerms) {
+                        builder.add(new BoostQuery(new org.apache.lucene.search.TermQuery(new org.apache.lucene.index.Term(abstractField, relatedTerm)), 0.4f), BooleanClause.Occur.SHOULD);
+                        builder.add(new BoostQuery(new org.apache.lucene.search.TermQuery(new org.apache.lucene.index.Term(titleField, relatedTerm)), 0.4f), BooleanClause.Occur.SHOULD);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed LLM expansion: " + e.getMessage());
+            }
+        }
 
         final BooleanQuery combined = builder.build();
         return combined.clauses().isEmpty() ? null : combined;
