@@ -44,6 +44,7 @@ public class Searcher {
     private static final ConfigManager CONFIG = ConfigManager.getGlobalConfig();
 
     private static final int PROGRESS_INTERVAL = 500;
+    private static final long PROGRESS_INTERVAL_MS = 5_000;
 
     private final IndexReader reader;
     private final IndexSearcher searcher;
@@ -130,15 +131,20 @@ public class Searcher {
             final int total = claims.size();
             int processed = 0;
             int translatedClaims = 0;
+            long lastProgressLogMs = start;
 
             for (Claim claim : claims) {
                 processed++;
-                if (processed % PROGRESS_INTERVAL == 0 || processed == total) {
-                    final long elapsedMs = System.currentTimeMillis() - start;
+                final long nowMs = System.currentTimeMillis();
+                if (processed % PROGRESS_INTERVAL == 0
+                        || processed == total
+                        || nowMs - lastProgressLogMs >= PROGRESS_INTERVAL_MS) {
+                    final long elapsedMs = nowMs - start;
                     final double rate = processed * 1000.0 / Math.max(1L, elapsedMs);
                     final long etaSec = rate > 0 ? (long) ((total - processed) / rate) : 0L;
                     System.out.printf("  [%5d / %d] %6.1f claims/s, elapsed %3ds, eta %3ds%n",
                             processed, total, rate, elapsedMs / 1000, etaSec);
+                    lastProgressLogMs = nowMs;
                 }
 
                 final ProcessedClaimQuery processedClaim = processor.process(claim);
@@ -202,7 +208,7 @@ public class Searcher {
                 if ("hybrid".equals(searchMode)) {
                     TopDocs lexDocs = lexicalQuery != null ? searcher.search(lexicalQuery, maxDocsRetrieved) : null;
                     TopDocs semDocs = semanticQuery != null ? searcher.search(semanticQuery, maxDocsRetrieved) : null;
-                    hits = combineWithRRF(lexDocs, semDocs, maxDocsRetrieved);
+                    hits = combineWithRRF(lexDocs, semDocs, maxDocsRetrieved, text);
                 } else if ("semantic".equals(searchMode)) {
                     if (semanticQuery != null) {
                         hits = searcher.search(semanticQuery, maxDocsRetrieved).scoreDocs;
@@ -404,8 +410,8 @@ public class Searcher {
         return null;
     }
 
-    private ScoreDoc[] combineWithRRF(TopDocs lexicalDocs, TopDocs semanticDocs, int maxResults) {
-        java.util.Map<Integer, Double> rrfScores = calculateRrfScores(lexicalDocs, semanticDocs);
+    private ScoreDoc[] combineWithRRF(TopDocs lexicalDocs, TopDocs semanticDocs, int maxResults, String queryText) {
+        java.util.Map<Integer, Double> rrfScores = calculateRrfScores(lexicalDocs, semanticDocs, queryText);
 
         java.util.List<java.util.Map.Entry<Integer, Double>> sorted = new java.util.ArrayList<>(rrfScores.entrySet());
         sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
@@ -418,14 +424,21 @@ public class Searcher {
         return finalHits;
     }
 
-    private java.util.Map<Integer, Double> calculateRrfScores(TopDocs lexicalDocs, TopDocs semanticDocs) {
+    private java.util.Map<Integer, Double> calculateRrfScores(TopDocs lexicalDocs, TopDocs semanticDocs, String queryText) {
         java.util.Map<Integer, Double> rrfScores = new java.util.HashMap<>();
 
         Double kOpt = CONFIG.getDouble("rrfK");
         int k = kOpt != null ? kOpt.intValue() : 60;
 
-        Double alphaOpt = CONFIG.getDouble("rrfAlpha");
-        double alpha = alphaOpt != null ? alphaOpt : 0.5;
+        int tokenCount = queryText != null ? queryText.trim().split("\\s+").length : 0;
+        final double alpha;
+        if (tokenCount < 10) {
+            Double shortOpt = CONFIG.getDouble("rrfAlphaShortQuery");
+            alpha = shortOpt != null ? shortOpt : 0.8;
+        } else {
+            Double longOpt = CONFIG.getDouble("rrfAlphaLongQuery");
+            alpha = longOpt != null ? longOpt : 0.2;
+        }
 
         if (lexicalDocs != null && lexicalDocs.scoreDocs != null) {
             for (int i = 0; i < lexicalDocs.scoreDocs.length; i++) {
