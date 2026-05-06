@@ -55,28 +55,6 @@ public class SearcherUtil {
         return results;
     }
 
-    /**
-     * Pulisce la query rimuovendo la punteggiatura.
-     */
-    public static String parsQuery(String query) {
-        return query.replaceAll(PUNC, " ");
-    }
-
-    /**
-     * Creates a dictionary from a file containing word-to-meaning mappings.
-     */
-    public static List<String> createDictionary(String pathFile) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(pathFile))) {
-            String line;
-            List<String> dict = new ArrayList<>();
-            while ((line = reader.readLine()) != null) {
-                String[] word = line.split("=>");
-                if (!word[0].trim().isEmpty())
-                    dict.add(word[0]);
-            }
-            return dict;
-        }
-    }
 
     /**
      * Converts a map of synonyms to a Lucene SynonymMap.
