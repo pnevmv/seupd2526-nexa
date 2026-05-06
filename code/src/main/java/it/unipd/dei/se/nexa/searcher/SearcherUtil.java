@@ -38,9 +38,7 @@ public class SearcherUtil {
     private SearcherUtil() {
     }
 
-    /**
-     * Analyzes a query string using the provided analyzer and returns a list of analyzed tokens.
-     */
+
     public static List<String> queryAnalyzer(Analyzer analyzer, String query) throws IOException {
         List<String> results = new ArrayList<>();
 
@@ -56,19 +54,7 @@ public class SearcherUtil {
     }
 
 
-    /**
-     * Converts a map of synonyms to a Lucene SynonymMap.
-     */
-    public static SynonymMap mapToSynonymMap(Map<String, String[]> synonymMap) throws IOException {
-        SynonymMap.Builder builder = new SynonymMap.Builder(true);
-        for (Map.Entry<String, String[]> entry : synonymMap.entrySet())
-            builder.add(new CharsRef(entry.getKey()), new CharsRef(String.join(",", entry.getValue())), false);
-        return builder.build();
-    }
 
-    /**
-     * Reads synonym mappings from a file and returns them as a map.
-     */
     public static Map<String, String[]> readSynonyms(String synonymMapFile) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(synonymMapFile))) {
             String line;
@@ -87,14 +73,6 @@ public class SearcherUtil {
         }
     }
 
-    /**
-     * Picks n random elements from the given list of synonyms.
-     */
-    public static List<String> pickNRandomSynonyms(List<String> lst, int n) {
-        List<String> copy = new ArrayList<>(lst);
-        Collections.shuffle(copy);
-        return n > copy.size() ? copy.subList(0, copy.size()) : copy.subList(0, n);
-    }
 
     /**
      * Sends a POST request to a custom HuggingFace endpoint using the provided prompt,
@@ -204,28 +182,28 @@ public class SearcherUtil {
 
     public static void main(String[] args) {
         try {
-            System.out.println("Avvio test Query Expansion con LLM...");
+            System.out.println(" Query Expansion with LLM...");
 
-            // Impostiamo manualmente un URL e una chiave se config fallisce
             String apiKey = config.getString("openApiKey");
-            if (apiKey == null || apiKey.isBlank() || apiKey.contains("YOUR_API_KEY_HERE")) {
-                System.err.println("ERROR: Insert valid API KEY in config.yml (openApiKey)!");
+            if (apiKey == null || apiKey.isBlank() || apiKey.contains("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")) {
+                System.err.println("ERROR: invalid API KEY in config.yml (openApiKey)!");
                 return;
             }
 
             String testQuery = "climate change global warming";
             System.out.println("Query original: " + testQuery);
+            System.out.println("Interrogation...");
 
             String[] expandedTerms = getRelatedTermsFromLLM(testQuery, apiKey);
 
-            System.out.println("\n Test completed!");
-            System.out.println("words extracted (" + expandedTerms.length + "):");
+            System.out.println("\n✅ Test complete!");
+            System.out.println("Words extract (" + expandedTerms.length + "):");
             for (String term : expandedTerms) {
                 System.out.println(" - " + term);
             }
 
         } catch (Exception e) {
-            System.err.println("Error.");
+            System.err.println("❌ Error:");
             e.printStackTrace();
         }
     }
