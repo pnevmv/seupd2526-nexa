@@ -1,6 +1,24 @@
 \section{Conclusions and Future Work}
 \label{sec:conclusion}
 
-Provide a summary of what are the main achievements and findings. 
+In this project, we developed a configurable multi-stage Information Retrieval system for Task~1 of the CLEF~2026 CheckThat! Lab, focused on retrieving scientific sources for social media claims in English, French, and German. The system was designed as a modular pipeline separating parsing, text cleaning, text analysis, indexing, retrieval, and reranking, which allowed us to test different configurations systematically.
 
-Discuss future work, e.g. what you may try next and/or how your approach could be further developed.
+The results show that a carefully tuned lexical system remains a strong baseline for this task. Translating all inputs into English simplified the multilingual setting and enabled the use of a single English analyzer pipeline based on the Standard tokenizer, KStem, and an English stop list. BM25 was the strongest lexical ranking model among the alternatives tested, while fielded retrieval further improved performance by giving different weights to the title, abstract, and authors fields. In particular, the abstract field proved especially important, since social media claims usually paraphrase scientific findings rather than paper titles.
+
+Our experiments also show that strict Boolean matching and standard lexical query expansion are not well suited to this task. MUST constraints reduced recall sharply because claims and abstracts rarely share exact wording. Similarly, WordNet expansion and Pseudo-Relevance Feedback degraded performance due to ambiguity, vocabulary mismatch, and topic drift.
+
+The best results were obtained by combining lexical and semantic evidence. Fusing BM25 scores with BGE-M3 dense similarity improved the average MRR@5 from 0.4719 for the best lexical system to 0.5290 for the hybrid system. This suggests that dense embeddings are most useful as a complementary signal to BM25, helping bridge the vocabulary and style gap between informal social media claims and formal scientific abstracts.
+
+\subsection*{Future Work}
+
+Our experiments with task-specific cross-encoder fine-tuning showed mixed results: the fine-tuned model improved French and German MRR@5 but degraded English, suggesting that the effect of fine-tuning is language-dependent and sensitive to training set size. Future work could investigate better fine-tuning strategies, such as language-balanced sampling, larger training sets, or stronger base models, to obtain more consistent gains across all languages.
+
+We also plan to explore more effective query reformulation strategies, including LLM-based rewriting of claims into retrieval-oriented scientific queries. Instead of simply adding synonyms to the original query, this approach could produce more formal and scientifically grounded formulations of social media claims, making them closer to the language used in scientific publications.
+
+Another direction is relevance-feedback-based expansion, especially Pseudo-Relevance Feedback. Although our initial experiments showed that PRF can introduce topic drift and reduce retrieval effectiveness, it may still be useful if applied more selectively, for example by filtering expansion terms, limiting feedback to highly confident documents, or combining it with semantic relevance signals.
+
+We also intend to study more advanced hybrid ranking strategies, including better calibration between lexical and semantic signals. The current system uses a fixed interpolation weight between BM25 and dense similarity scores. Future systems could instead use adaptive or learned fusion methods that adjust the contribution of lexical and semantic evidence depending on the query, language, or candidate set.
+
+A further line of work is language-aware modeling, including improved translation quality and language-specific error analysis, especially for German, where retrieval performance remains lower than for English and French. Since the task involves matching claims and documents across different languages, a better understanding of translation errors and language-specific retrieval failures could help improve the robustness of the system.
+
+Finally, we plan to analyze efficiency--effectiveness trade-offs more systematically. Stronger neural ranking models, such as cross-encoders, may improve retrieval quality but also increase computational cost. Future work should therefore evaluate whether the gains from more expensive ranking models justify their cost in a realistic retrieval pipeline.

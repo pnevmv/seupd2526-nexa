@@ -39,6 +39,7 @@
 *.synctex.gz
 *.bbl
 *.blg
+homework-*/build/
 
 # Matlab
 *.m~
@@ -84,6 +85,7 @@ __pycache__/
 *.py[cod]
 
 code/experiment/
+experiment/
 
 # IDE
 .vscode/

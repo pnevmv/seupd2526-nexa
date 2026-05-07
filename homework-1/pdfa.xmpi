@@ -69,15 +69,22 @@
   <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/"> 
    <dc:format>application/pdf</dc:format> 
    <dc:type><rdf:Bag><rdf:li>journal</rdf:li></rdf:Bag></dc:type>
-   <dc:title><rdf:Alt><rdf:li xml:lang="x-default">SEUPD@CLEF: Team &#x003c;Acronym&#x003e;</rdf:li></rdf:Alt></dc:title>
-   <dc:creator><rdf:Seq><rdf:li>Name Surname</rdf:li>
-     <rdf:li>Name Surname</rdf:li>
-     <rdf:li>Name Surname</rdf:li></rdf:Seq></dc:creator>
+   <dc:title><rdf:Alt><rdf:li xml:lang="x-default">SEUPD@CLEF: Team NEXA</rdf:li></rdf:Alt></dc:title>
+   <dc:creator><rdf:Seq><rdf:li>Paul Arlot</rdf:li>
+     <rdf:li>Andrea Di Tillo</rdf:li>
+     <rdf:li>Gaute Greiff Flagstad</rdf:li>
+     <rdf:li>Bita Khashechian</rdf:li>
+     <rdf:li>Danil Smirnov</rdf:li>
+     <rdf:li>Marco Tomaiuoli</rdf:li></rdf:Seq></dc:creator>
    <dc:rights><rdf:Alt><rdf:li xml:lang="x-default">© 2026 Copyright for this paper by its authors.\\ Use permitted under Creative Commons License Attribution 4.0 International (CC BY 4.0).</rdf:li></rdf:Alt></dc:rights>
    <dc:description><rdf:Alt><rdf:li xml:lang="x-default">Layout by CEURART v0.5.3</rdf:li></rdf:Alt></dc:description>
-   <dc:subject><rdf:Bag><rdf:li>keyword 1 </rdf:li>
-     <rdf:li>keyword 2 </rdf:li>
-     <rdf:li>keyword 3</rdf:li></rdf:Bag></dc:subject>
+   <dc:subject><rdf:Bag><rdf:li>Information Retrieval </rdf:li>
+     <rdf:li>Search Engine </rdf:li>
+     <rdf:li>CLEF </rdf:li>
+     <rdf:li>CheckThat! </rdf:li>
+     <rdf:li>Scientific Claim Verification </rdf:li>
+     <rdf:li>Lucene </rdf:li>
+     <rdf:li>Multilingual Search</rdf:li></rdf:Bag></dc:subject>
   </rdf:Description> 
   <rdf:Description rdf:about="" xmlns:prism="http://prismstandard.org/namespaces/basic/2.2/"> 
    <prism:aggregationType>journal</prism:aggregationType>
@@ -91,9 +98,9 @@
   </rdf:Description> 
   <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/"> 
    <xmp:CreatorTool>LaTeX with hyperref</xmp:CreatorTool> 
-   <xmp:ModifyDate>2026-02-20T20:17:31+01:00</xmp:ModifyDate> 
-   <xmp:CreateDate>2026-02-20T20:17:31+01:00</xmp:CreateDate> 
-   <xmp:MetadataDate>2026-02-20T20:17:31+01:00</xmp:MetadataDate> 
+   <xmp:ModifyDate>2026-05-07T22:17:33+02:00</xmp:ModifyDate> 
+   <xmp:CreateDate>2026-05-07T22:17:33+02:00</xmp:CreateDate> 
+   <xmp:MetadataDate>2026-05-07T22:17:33+02:00</xmp:MetadataDate> 
   </rdf:Description> 
   <rdf:Description rdf:about="" xmlns:xmpRights = "http://ns.adobe.com/xap/1.0/rights/"> 
    <xmpRights:Marked>True</xmpRights:Marked>
@@ -102,7 +109,7 @@
   </rdf:Description> 
   <rdf:Description rdf:about="" xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/"> 
    <xmpMM:DocumentID>uuid:AED1DDBC-D24F-2551-4950-9F33EC0F2242</xmpMM:DocumentID> 
-   <xmpMM:InstanceID>uuid:AAE4BE58-24B2-CF18-254E-1A427F1CEC91</xmpMM:InstanceID> 
+   <xmpMM:InstanceID>uuid:CA9954C7-7AE6-55AF-0386-CE1B0C2DFB69</xmpMM:InstanceID> 
   </rdf:Description> 
  </rdf:RDF> 
 </x:xmpmeta> 

@@ -1,4 +1,218 @@
-\section{Methodology}
-\label{sec:methodology}
+\newpage
+\section{Methodology}\label{sec:methodology}
 
-Describe the methodology you have adopted, the architecture of your system, your workflow, etc.
+In this section, we describe the architecture and components of our system. Our approach follows a multi-stage Information Retrieval pipeline combining traditional lexical matching with semantic representations.
+
+\subsection{Data Parsing}
+
+The first stage of the pipeline turns the two textual inputs of the system, the corpus of scientific publications and the set of input claims, into structured Java objects that the rest of the pipeline can work with. Both inputs are provided as JSON and share the same text cleaning routine, so we describe them together. On the data side we have two simple classes: \texttt{Publication} for documents and \texttt{Claim} for queries.
+
+\subsubsection{Documents (Publications)}
+
+Documents are read through an abstract \texttt{CommonParser} class that defines the iterator interface and exposes the shared text cleaning routine, with concrete subclasses for each input format. Since the corpus is provided as JSON, the only subclass we currently use is \texttt{JsonParser}.
+
+\texttt{CommonParser} implements \texttt{Iterator<Publication>}, so it produces one \texttt{Publication} at a time as the input is read. Each \texttt{Publication} gets the fields we use for retrieval: a numerical identifier (\texttt{pubkey}), the \texttt{title}, \texttt{abstract}, \texttt{venue} and \texttt{authors}. Missing or \texttt{null} fields are replaced with empty defaults, and empty abstracts are filled with a placeholder token so that every document still produces a valid entry in the index.
+
+\texttt{JsonParser} uses the Jackson library to read the corpus, which is stored as a JSON array of document objects. We process the stream incrementally rather than loading the whole file at once, which keeps memory usage flat regardless of corpus size. For each publication we map the JSON fields onto a \texttt{Publication} instance and run the abstract through the cleaning routine before it leaves the parser.
+
+\subsubsection{Queries (Claims)}
+
+Queries are loaded from a separate JSON topics file containing a list of claim objects. We parse it into a \texttt{List<Claim>} using a Jackson \texttt{ObjectMapper}, rather than going through the streaming parser used for documents. Each \texttt{Claim} keeps all three fields: the claim \texttt{index}, the claim \texttt{text}, and the gold \texttt{pubkey} when present (used only at evaluation time).
+
+To keep documents and queries aligned, the cleaning routine described next is applied to the claim text from inside the setter of the \texttt{Claim} class. By the time the searcher iterates over the list, both sides of the retrieval problem have gone through exactly the same preprocessing, which avoids the kind of subtle mismatches that arise when documents and queries are normalized differently.
+
+\subsubsection{Text Cleaning}
+
+Before any text reaches the analyzer, we pass it through a cleaning function (\texttt{cleanText}) that strips out the noise produced by the mix of scientific writing and social media content in the corpus. The function applies the following steps in order:
+
+\begin{itemize}
+    \item \textbf{Unicode normalisation:} the text is converted to NFC form so the character representation is consistent.
+    \item \textbf{HTML unescaping and stripping:} HTML entities are decoded and any leftover tags are removed.
+    \item \textbf{URL removal:} hyperlinks are dropped so they do not end up as tokens.
+    \item \textbf{Citation removal:} bracketed references (e.g.\ ``[1, 2--5]'') and author--year citations (e.g.\ ``(Rossi et al., 2023)'') are removed.
+    \item \textbf{Section header removal:} structural labels that appear in scientific abstracts, such as \textit{Abstract}, \textit{Methods}, \textit{Results} or \textit{Conclusions}, are stripped.
+    \item \textbf{Symbol and emoji removal:} mathematical and scientific symbols (e.g.\ \textdegree, $\pm$, $\geq$) and emoji characters are replaced with spaces.
+    \item \textbf{Social media artefacts:} Twitter-style mentions (e.g.\ \texttt{@user}) are removed.
+    \item \textbf{Whitespace collapsing:} runs of whitespace are collapsed into a single space and any leading or trailing whitespace is trimmed.
+\end{itemize}
+
+This step is important because the corpus mixes formal abstracts with informal claims. Without it the analyzer would have to deal with a lot of noisy tokens that could decrease matching quality.
+
+\subsection{Query Expansion}
+
+To merge the vocabulary between informal social media claims and formal scientific abstracts, the system supports four query expansion strategies that can be turned on independently from the configuration file. Each one adds extra terms to the Boolean query produced by the searcher, but with different sources and different boost weights so that the original claim terms always weigh more than the expansions.
+
+\subsubsection{Static Dictionary Expansion}
+
+The simplest strategy is to use tested dictionaries for all the three languages, loaded from the file referenced by the \texttt{synonymsFile} parameter. During query construction (\texttt{buildLexicalQuery}), each token of the claim is looked up in the dictionary, and any matching synonyms (for example, ``car'' $\rightarrow$ ``automobile'', ``vehicle'') are added to the abstract subquery with a boost of \texttt{0.5f}, half the weight of the original term. This keeps the original tokens dominant in the ranking while still letting the expansion contribute.
+\subsubsection{LLM-based Expansion}
+
+To capture relations beyond a fixed dictionary, the system can expand the query using a Large Language Model. The claim text is sent to the Groq API with the configured \texttt{openApiKey} and \texttt{llmModel} (currently \texttt{llama-3.1-8b-instant}). The model returns a short list of related terms, for example ``CO\textsubscript{2}'', ``pollution'' and ``glaciers'' for ``climate change''. These terms are added to the title and abstract subqueries with a boost of \texttt{0.4f}.
+
+This route is more expressive than the static dictionary, but it adds a network round trip to every query, and the free tier of the Groq API is rate-limited to roughly 30 requests per minute, which makes it impractical for batch experiments without throttling.
+
+\subsubsection{Pseudo-Relevance Feedback}
+
+The third strategy is Pseudo-Relevance Feedback (PRF), which expands the query using the local index instead of an external resource. PRF works on the assumption that the top-ranked documents returned by a first search are likely to be relevant, and reuses their content as a source of related terms. The procedure has two stages:
+
+\begin{enumerate}
+    \item \textbf{Initial search.} The system runs the original query and keeps the top-$k$ documents (we use $k = 3$).
+    \item \textbf{Expansion and re-search.} The title and abstract of each of those documents are tokenised, numeric and very short tokens are dropped, and the five most frequent remaining terms are appended to the original query with a boost of \texttt{0.3f}. The search is then re-executed against the index.
+\end{enumerate}
+
+The appeal of PRF is that the expansion terms come straight from the corpus, so they are guaranteed to be in-vocabulary for the index. The cost is that every claim now requires two Lucene searches instead of one, which roughly doubles retrieval time. For this reason PRF is disabled in the timed runs we report.
+
+\subsubsection{Earlier Gemini-based Expansion}
+
+An earlier version of the LLM expansion module relied on Google's Gemini API rather than Groq, with a different integration shape. A small Python service ran alongside the Java search engine and acted as a bridge between the two. For each query, the service first looked up the claim text in a local on-disk cache; if the same query had been expanded before, the cached terms were returned immediately. Otherwise the raw claim was forwarded to the Gemini API with a prompt asking the model to ignore emojis and opinions, list related synonyms, and return between 10 and 15 keywords. The response was then written back to the cache and returned to the Java side.
+
+This approach was not carried into the final pipeline. It required running a separate Python service alongside the Java search engine, with its own dependency stack, cache file, and HTTP coupling point between the two processes. The Groq-based path described above covers the same use case (LLM-generated synonyms with on-disk caching) directly from Java, with one fewer moving part. The Gemini API was also less reliable in our setup, which made the trade-off easier.
+
+\subsection{Text Analysis}
+
+The text analysis phase transforms raw textual input into a stream of tokens that can be indexed and later retrieved.
+Initially, we tried to use language-specific analyzer classes but using a single English analyzer after translation was simpler and offered better results.
+The analysis is performed through an analyzer class, which extends the Apache Lucene \texttt{Analyzer} framework.
+
+The analyzer follows an architecture composed of three main components:
+
+\begin{itemize}
+    \item \textbf{Tokenizer:} Responsible for splitting the input text into raw tokens.
+    \item \textbf{Token Filters:} Sequentially modify, normalize, or enrich the token stream.
+    \item \textbf{Stemming/Lemmatization:} Reduces tokens to their base or root forms to improve generalization.
+\end{itemize}
+
+The overall pipeline is dynamically configured through external YAML configuration files, allowing flexible adaptation of processing strategies and experimental settings.
+
+\subsubsection{Tokenizer Configurations}
+
+Multiple tokenization strategies are supported, enabling the system to handle different types of input text:
+
+\begin{itemize}
+    \item \textbf{Standard Tokenizer:} Uses Lucene’s rule-based tokenizer to handle punctuation, digits, and word boundaries.
+    \item \textbf{Letter Tokenizer:} Emits tokens composed only of alphabetic characters, treating non-letter characters as delimiters.
+    \item \textbf{Whitespace Tokenizer:} Splits input strictly on whitespace characters without processing punctuation.
+    \item \textbf{NLP Tokenizer:} Uses Apache OpenNLP models to perform linguistically informed tokenization.
+\end{itemize}
+
+The tokenizer type is selected through configuration files, allowing to try different strategies.
+
+\subsubsection{Token Filters}
+
+Token filters are applied after tokenization to normalize and enrich the token stream. These filters are categorized into general (language-independent) and language-specific filters.
+
+\paragraph{General Token Filters}
+
+These filters perform general normalization operations across all languages:
+
+\begin{itemize}
+    \item \textbf{LowerCaseFilter:} Converts all tokens to lowercase.
+    \item \textbf{ICUFoldingFilter:} Normalizes accented and special characters into ASCII equivalents.
+    \item \textbf{NBSPFilter:} Removes non-breaking spaces and trims tokens.
+    \item \textbf{RemoveDuplicatesTokenFilter:} Eliminates duplicate tokens.
+    \item \textbf{LengthFilter:} Removes tokens that are too short or too long.
+    \item \textbf{RepeatedLetterFilter:} Normalizes tokens with repeated characters (e.g., ``soooo'' $\rightarrow$ ``soo'').
+\end{itemize}
+
+\paragraph{Enrichment Filters}
+
+To improve semantic representation, additional filters are applied:
+
+\begin{itemize}
+    \item \textbf{AbbreviationExpansionFilter:} Expands abbreviations using predefined mappings (e.g., ``ml'' $\rightarrow$ ``machine learning'').
+    \item \textbf{CompoundPOSTokenFilter:} Uses Part-of-Speech tagging to combine semantically related tokens into compound expressions.
+    \item \textbf{ShingleFilter:} Generates n-grams to capture local contextual information.
+    \item \textbf{PositionFilter:} Normalizes positional increments for indexing consistency.
+\end{itemize}
+
+\paragraph{Language-Specific Filters}
+
+Each analyzer applies additional filters tailored to linguistic characteristics:
+
+\begin{itemize}
+    \item English-specific filters (e.g., possessive removal, English stopwords)
+    \item French-specific filters (e.g., elision handling, French stopwords)
+    \item German-specific filters (e.g., compound handling and normalization)
+\end{itemize}
+
+This design ensures that each language is processed according to its grammatical and lexical properties.
+Since we translate everything to English, we are using only English-specific filters.
+
+\subsubsection{Stemming and Lemmatization}
+
+The system supports multiple strategies for reducing tokens to their canonical forms: \textbf{Porter Stemmer}, \textbf{Snowball Stemmer}, \textbf{OpenNLP Lemmatizer}, \textbf{No Stemming}.
+
+The selected method is controlled through configuration files and can vary depending on the experimental setup.
+
+\subsection{Document Indexing}
+
+The document indexing stage transforms processed publications into a searchable inverted index using Apache Lucene. This structure enables efficient retrieval of relevant documents during the query phase. In our system, indexing is handled by the \texttt{DirectoryIndexer} component, which coordinates parsing, preprocessing, and storage of documents.
+
+\subsubsection{Indexing Workflow}
+
+The indexing workflow operates over a collection of JSON files containing scientific publications. Each file is parsed to extract individual documents, represented internally as structured \texttt{Publication} objects. Only documents containing meaningful textual content (such as title or abstract) are considered for indexing.
+
+In addition to standard preprocessing, the system supports optional enhancements. When enabled, non-English documents are translated into English before indexing using a locally hosted Gemma model served via a dedicated Python HTTP service; the same service is applied to non-English claims at query time. Moreover, the system can generate dense vector representations of the textual content by interacting with an external embedding service. These embeddings are stored alongside the indexed documents to support semantic retrieval.
+
+Each processed publication is converted into a Lucene \texttt{Document} and added to the index using an \texttt{IndexWriter}. During this process, statistics such as the number of indexed documents and total indexing time are recorded.
+
+\subsubsection{Field Representation}
+
+Document content is stored in structured fields, such as title and abstract. A custom field type is defined to support advanced indexing features, including term frequencies, positional information, and character offsets.
+
+The system also enables storage of term vectors, which allows more advanced retrieval functionalities such as phrase matching, proximity queries, and potential re-ranking strategies. Additionally, the original textual content can be stored in the index to support downstream processing steps.
+
+\subsubsection{Processing Pipeline}
+
+The indexing procedure follows a well-defined sequence of steps. First, the system initializes the index writer with the configured analyzer and output directory. Then, for each document, the following operations are performed:
+
+\begin{itemize}
+    \item Parsing the input file into structured publication objects
+    \item Filtering out incomplete or invalid entries
+    \item Detecting the language of the document
+    \item Applying optional translation if required
+    \item Generating semantic embeddings (if enabled)
+    \item Converting the document into a Lucene-compatible format
+    \item Adding the document to the index
+\end{itemize}
+
+Once all documents have been processed, the index is finalized by committing changes and closing the writer.
+
+This modular and extensible design allows the indexing system to integrate multiple preprocessing strategies, multilingual handling, and semantic enrichment, while keeping the core indexing logic independent and reusable.
+
+\subsection{Retrieval Phase}
+
+The retrieval phase is responsible for matching input claims with relevant scientific publications stored in the indexed collection. This component is implemented through the \texttt{Searcher} class, which performs query processing, executes search operations over the Lucene index, and outputs ranked results.
+
+The system initializes a Lucene \texttt{IndexSearcher} over the indexed data and employs the BM25 similarity function for ranking. Queries are provided as a collection of claims stored in JSON format, where each claim represents a short textual statement that must be linked to relevant documents.
+
+\subsubsection{Query Formulation}
+
+Each claim is processed independently. The textual content is first transformed into a structured query using a \texttt{QueryBuilder}, which applies the same analyzer used during indexing. This ensures that both documents and queries undergo consistent preprocessing, reducing mismatches due to tokenization or normalization.
+
+The resulting terms are used to construct field-specific queries targeting different parts of the indexed documents.
+
+\subsubsection{Structured Boolean Queries}
+
+Instead of relying on a single-field representation, the system generates separate subqueries for the title and abstract fields of each document.
+
+These subqueries are combined using a Boolean query with \texttt{SHOULD} clauses, allowing documents to be retrieved if they match either field. This formulation increases recall while maintaining flexibility in matching.
+
+To further refine the ranking, different importance weights are assigned to each field through boosting. In particular, matches occurring in the abstract field are given higher importance than those in the title, since social media claims typically paraphrase scientific findings rather than paper titles. This results in a weighted query structure that prioritizes the abstract as the primary evidence field while still drawing a smaller signal from the title.
+
+\subsubsection{Ranking Mechanism}
+
+Once the Boolean query is constructed, it is executed using the Lucene search engine. The system retrieves the top-$k$ documents according to their BM25 scores. This ranking function considers the frequency of query terms, their rarity across the collection, and document length normalization.
+
+The number of retrieved documents is configurable and can be adjusted depending on the evaluation setup.
+
+\subsubsection{Result Formatting}
+
+The retrieved results are written to an output file following the TREC evaluation format. Each entry includes the query identifier, document identifier, rank position, score, and run identifier. This standardized format ensures compatibility with external evaluation tools commonly used in information retrieval benchmarks.
+
+\subsection{Cross-Encoder Fine-Tuning}
+
+After the initial retrieval stage, the system optionally applies a cross-encoder reranker that scores each (claim, candidate) pair jointly. Unlike the bi-encoder used for dense fusion, a cross-encoder receives both texts concatenated and produces a single relevance score, which allows it to model fine-grained interactions between the claim and the abstract but makes it too slow for full-collection retrieval. It is therefore applied only to the short candidate list produced by the earlier stages.
+
+We used the \texttt{ms-marco-MiniLM-L-6-v2} checkpoint as the starting point and fine-tuned it on task-specific data to adapt it to the informal-claim-to-scientific-abstract matching problem. The training set was constructed as follows. For each claim in the training split, the gold publication was used as the positive example. Hard negatives were sampled from the top-$k$ candidates returned by the lexical retrieval stage that did not match the gold pubkey: these are the documents the system nearly retrieved as correct answers, making them more informative for training than random negatives drawn from the full collection. The model was fine-tuned for 2 epochs with a maximum sequence length of 512 tokens; the training loss converged to approximately 0.22. The effect of fine-tuning on retrieval performance is reported in Section~\ref{sec:results}.
+
