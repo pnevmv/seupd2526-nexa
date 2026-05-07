@@ -100,7 +100,7 @@ We now tune how the query is assembled: which fields to boost, whether terms are
         \multicolumn{5}{l}{\textit{Part C: authors boost (title boost ${=}\,2.0$, abstract boost ${=}\,3.0$, topK${=}30$)}} \\
         0.5              & 0.4888 & 0.4938 & 0.3373 & 0.4400 \\
         1.0              & 0.4990 & 0.5066 & 0.3604 & 0.4693 \\
-        \textbf{1.5}     & \textbf{0.5172} & \textbf{0.5145} & \textbf{0.3841} & \textbf{0.4732} \\
+        \textbf{1.5}     & \textbf{0.5172} & \textbf{0.5145} & \textbf{0.3841} & \textbf{0.4719} \\
         2.0              & 0.5160 & 0.5130 & 0.3820 & 0.4715 \\
         3.0              & 0.5050 & 0.5020 & 0.3754 & 0.4608 \\
         \bottomrule
@@ -109,7 +109,7 @@ We now tune how the query is assembled: which fields to boost, whether terms are
 
 Parts A and B fix the title-to-abstract boost ratio. With the abstract boost held at 1.0, raising the title boost above 1.0 only hurts; with the title boost held at 2.0, raising the abstract boost up to 3.0 monotonically improves. The winning combination is a title boost of 2 and an abstract boost of 3, and what matters is the 2:3 ratio rather than the absolute values. Claims are tweet-style paraphrases of findings, not of titles, so the abstract is the primary evidence field, while the title still contributes a smaller but non-zero signal.
 
-Part C adds the authors field on top of these settings, with the peak at an authors boost of 1.5 (0.4732 average), about 1.5 points above the no-authors row. Pushing higher hurts as mismatched proper nouns start to dominate. The DE column gains the most (about 2.4 points), consistent with German-translated tweets more often naming researchers than the English originals. We also swept a venue boost from 0.0 to 0.5 with no measurable effect.
+Part C adds the authors field on top of these settings, with the peak at an authors boost of 1.5 (0.4719 average), about 1.5 points above the no-authors row. Pushing higher hurts as mismatched proper nouns start to dominate. The DE column gains the most (about 2.4 points), consistent with German-translated tweets more often naming researchers than the English originals. We also swept a venue boost from 0.0 to 0.5 with no measurable effect.
 
 We then varied the strictness of the Boolean query, marking the top-IDF terms as MUST and the rest as SHOULD\@. Even the lightest mixed variant (must${=}\,2$) drops the average to 0.087, and a full MUST query collapses to 0.007. Claims paraphrase findings rather than quoting them, so any hard term constraint reduces recall heavily. We use pure SHOULD throughout the rest of the chapter.
 
@@ -156,12 +156,10 @@ For the IDF pruning sweep, the score climbs from $K{=}10$ to $K{=}30$ and then f
 %     explicit in the closing paragraph.
 % =============================================================================
 
-We tested two query expansion strategies that the methodology supports, WordNet synonyms and pseudo-relevance feedback. Both hurt retrieval, and for the same underlying reason.
-
-% TODO: expand the opener above; explain why we tried these and what the methodology promised.
+The principal challenge in this task is a vocabulary gap: claims are informal, tweet-style paraphrases of scientific findings, while the indexed documents are formal abstracts. Two standard remedies are query expansion by synonym injection and pseudo-relevance feedback (PRF), which expands the query with terms drawn from the top retrieved documents. We tested both on top of the analyzer fixed in Section~\ref{subsec:res-analyzer}, expecting them to bridge the informal-to-formal gap. Both hurt retrieval monotonically as expansion grows.
 
 \begin{table}[!ht]
-    \caption{Query expansion experiments, MRR@5. All runs use the lexical configuration fixed in Sections \ref{subsec:res-analyzer}--\ref{subsec:res-fielded}.}
+    \caption{Query expansion experiments, MRR@5. All runs use the analyzer configuration fixed in Section~\ref{subsec:res-analyzer}.}
     \label{tab:expansion}
     \centering
     \begin{tabular}{lcccc}
@@ -181,17 +179,11 @@ We tested two query expansion strategies that the methodology supports, WordNet 
     \end{tabular}
 \end{table}
 
-% TODO: 2 paragraphs.
-%   1. WordNet: monotonic degradation as more synonyms are added. Three causes:
-%      domain mismatch (scientific terms absent from WordNet), specificity loss
-%      (synonyms of "system" point to general everyday concepts), and BM25
-%      dilution (extra tokens lower the IDF contribution of the originals).
-%   2. PRF: same dilution mechanism plus a 2x retrieval cost. The top retrieved
-%      docs contain related-but-different topics in the same domain (e.g. nearby
-%      COVID papers), so feeding those terms back drifts the query toward a
-%      broader topic cluster.
-% Closing: both disabled in the submitted runs. Foreshadow §5.6: dense fusion
-% addresses the same vocabulary-mismatch problem without the dilution.
+WordNet expansion degrades the score monotonically: adding at most one synonym per word costs 3.9 points of average MRR@5, and at most five synonyms costs 9.1 points, leaving the system far below its unexpanded baseline. Three compounding factors explain this. First, WordNet is a general-vocabulary lexicon and covers very few of the precise scientific terms that appear in the corpus (``efficacy'', ``mRNA'', ``SARS-CoV-2'') so synonyms are generated mainly for the common words in the claim, not the discriminative ones. Second, the general synonyms that WordNet does produce introduce ambiguity: ``system'' in \textit{immune system} receives synonyms that point to entirely unrelated everyday senses, introducing tokens that match irrelevant documents. Third, every injected synonym increases query length, which reduces BM25's IDF weighting on the original precise terms via length normalisation, making the genuine discriminative signal weaker rather than stronger.
+
+PRF avoids the dictionary mismatch problem by extracting expansion terms from documents the system has already retrieved. The degradation is smaller (0.7--1.2 points), but the direction is consistently negative. The root cause is topic drift: in a corpus dominated by COVID and vaccine research, the top retrieved documents for any health claim are neighbouring papers on similar but distinct subtopics. Feeding their most frequent terms back into the query shifts the focus toward the broader topic cluster and away from the specific claim. BM25 length normalisation penalises the expanded query for the same reason as with WordNet, compounding the drift.
+
+Both strategies are disabled in all later experiments. The vocabulary gap they were meant to address is real, but adding tokens to the lexical query is the wrong tool. Section~\ref{subsec:res-hybrid} shows that dense fusion with BGE-M3 does close the gap, because embeddings place tweet-style paraphrases and formal abstracts close in a shared continuous space without any additional tokens entering the BM25 scoring path.
 
 \subsection{Ablation of the Lexical System}
 \label{subsec:res-ablation}
