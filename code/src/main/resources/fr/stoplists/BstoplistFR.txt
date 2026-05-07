@@ -689,3 +689,34 @@ zut
 êtes
 être
 ô
+# --- added: missing function words (ICU-folded, unaccented forms) ---
+pour
+pendant
+vers
+parce
+quant
+quelque
+ete
+present
+actuel
+consequent
+sitot
+aussitot
+evident
+cot
+# cross-language leakage
+the
+and
+# English function words leaking into FR field
+of
+in
+to
+is
+with
+was
+an
+for
+are
+by
+that
+this

@@ -1,0 +1,11 @@
+86 Q0 4897 0 4.063709 fd-D:_modemust-fr
+288 Q0 4897 0 6.020526 fd-D:_modemust-fr
+616 Q0 285 0 53.731110 fd-D:_modemust-fr
+815 Q0 1030 0 48.063732 fd-D:_modemust-fr
+1073 Q0 11 0 28.526279 fd-D:_modemust-fr
+1091 Q0 3765 0 4.674519 fd-D:_modemust-fr
+1091 Q0 4718 1 1.937872 fd-D:_modemust-fr
+1510 Q0 256 0 15.711382 fd-D:_modemust-fr
+1510 Q0 6607 1 6.677971 fd-D:_modemust-fr
+1941 Q0 111 0 5.222222 fd-D:_modemust-fr
+2197 Q0 6210 0 7.443310 fd-D:_modemust-fr

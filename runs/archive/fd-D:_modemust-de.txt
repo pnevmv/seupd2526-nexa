@@ -1,0 +1,4 @@
+162 Q0 3072 0 10.284458 fd-D:_modemust-de
+596 Q0 256 0 14.235335 fd-D:_modemust-de
+1120 Q0 7865 0 54.848782 fd-D:_modemust-de
+1120 Q0 8910 1 54.678005 fd-D:_modemust-de

@@ -1,0 +1,15 @@
+86 Q0 4897 0 4.063709 fd-D:_mixed_must8-fr
+288 Q0 4897 0 6.020526 fd-D:_mixed_must8-fr
+616 Q0 285 0 54.925301 fd-D:_mixed_must8-fr
+815 Q0 1030 0 61.833511 fd-D:_mixed_must8-fr
+1073 Q0 11 0 28.526279 fd-D:_mixed_must8-fr
+1091 Q0 3765 0 4.674519 fd-D:_mixed_must8-fr
+1091 Q0 4718 1 1.937872 fd-D:_mixed_must8-fr
+1509 Q0 1963 0 66.518890 fd-D:_mixed_must8-fr
+1510 Q0 256 0 15.711381 fd-D:_mixed_must8-fr
+1510 Q0 6607 1 6.677970 fd-D:_mixed_must8-fr
+1510 Q0 7016 2 4.942994 fd-D:_mixed_must8-fr
+1940 Q0 3076 0 100.018921 fd-D:_mixed_must8-fr
+1941 Q0 111 0 5.222222 fd-D:_mixed_must8-fr
+2197 Q0 6210 0 8.256331 fd-D:_mixed_must8-fr
+2610 Q0 256 0 14.061895 fd-D:_mixed_must8-fr

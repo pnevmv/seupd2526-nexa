@@ -14,6 +14,11 @@ import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.LMDirichletSimilarity;
+import org.apache.lucene.search.similarities.LMJelinekMercerSimilarity;
+import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -41,6 +46,7 @@ public class DirectoryIndexer {
         Directory dir = FSDirectory.open(indexPath);
         IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+        iwc.setSimilarity(buildSimilarity());
         this.writer = new IndexWriter(dir, iwc);
     }
 
@@ -122,6 +128,31 @@ public class DirectoryIndexer {
         System.out.printf("\nIndexing complete. %d documents in target in %d ms.%n", count, (end - start));
     }
 
+    static Similarity buildSimilarity() {
+        final String simName = config.getString("similarity");
+        if (simName == null || simName.isBlank() || "BM25".equalsIgnoreCase(simName)) {
+            Double k1Opt = config.getDouble("bm25_k1");
+            Double bOpt = config.getDouble("bm25_b");
+            float k1 = k1Opt != null ? k1Opt.floatValue() : 1.2f;
+            float b  = bOpt  != null ? bOpt.floatValue()  : 0.75f;
+            return new BM25Similarity(k1, b);
+        }
+        return switch (simName.toUpperCase()) {
+            case "CLASSIC", "TFIDF" -> new ClassicSimilarity();
+            case "LMD", "LMDIRICHLET" -> {
+                Double muOpt = config.getDouble("lmd_mu");
+                float mu = muOpt != null ? muOpt.floatValue() : 2000f;
+                yield new LMDirichletSimilarity(mu);
+            }
+            case "LMJM", "LMJELINEKMERCER" -> {
+                Double lambdaOpt = config.getDouble("lmjm_lambda");
+                float lambda = lambdaOpt != null ? lambdaOpt.floatValue() : 0.1f;
+                yield new LMJelinekMercerSimilarity(lambda);
+            }
+            default -> throw new IllegalArgumentException("Unknown similarity: " + simName);
+        };
+    }
+
     private static Analyzer buildLanguageAwareAnalyzer() {
         Map<String, Analyzer> fieldAnalyzers = new LinkedHashMap<>();
 
@@ -189,12 +220,12 @@ public class DirectoryIndexer {
                 System.out.println("Usage: DirectoryIndexer <collectionJsonOrDir> [indexDir]");
                 return;
             }
-            inputPath = Paths.get(configuredCollectionPath);
+            inputPath = ConfigManager.resolvePath(configuredCollectionPath);
         }
 
         final Path indexPath = args.length >= 2
                 ? Paths.get(args[1])
-                : Path.of(config.getString("indexPath"));
+                : ConfigManager.resolvePath(config.getString("indexPath"));
 
         try (Analyzer analyzer = buildLanguageAwareAnalyzer()) {
             System.out.println("DirectoryIndexer...");

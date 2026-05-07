@@ -8,6 +8,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Optional
 
 
 LANG_SPLIT_PATTERN = re.compile(r"^(de|en|fr)_(train|dev)\.json$", re.IGNORECASE)
@@ -31,7 +32,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def infer_source_lang(path: Path) -> str | None:
+def infer_source_lang(path: Path) -> Optional[str]:
     match = LANG_SPLIT_PATTERN.match(path.name)
     return match.group(1).lower() if match else None
 

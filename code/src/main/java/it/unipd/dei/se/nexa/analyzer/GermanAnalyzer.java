@@ -175,14 +175,14 @@ public class GermanAnalyzer extends Analyzer {
         if (Boolean.TRUE.equals(config.getBool("posOpnNLPFilter")))
             filter = new CompoundPOSTokenFilter(filter, loadPosTaggerModel(config));
 
-        if (Boolean.TRUE.equals(config.getBool("nGramsFilter")))
-            filter = new ShingleFilter(filter, config.getInt("shingleSize"));
-
         if (minLength != null && maxLength != null)
             filter = new LengthFilter(filter, minLength, maxLength);
 
         if (!StringUtils.isBlank(stopListFilePath))
             filter = new StopFilter(filter, loadStopList(stopListFilePath));
+
+        if (Boolean.TRUE.equals(config.getBool("nGramsFilter")))
+            filter = new ShingleFilter(filter, config.getInt("shingleSize"));
 
         if (Boolean.TRUE.equals(config.getBool("positionFilter")))
             filter = new PositionFilter(filter, config.getInt("positionIncrement"));
