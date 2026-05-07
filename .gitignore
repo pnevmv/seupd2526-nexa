@@ -80,6 +80,7 @@ datasets/
 .DS_Store
 
 code/experiment/
+experiment/
 
 # IDE
 .vscode/
