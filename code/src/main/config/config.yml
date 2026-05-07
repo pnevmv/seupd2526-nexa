@@ -33,6 +33,17 @@ translationServiceUrl: http://127.0.0.1:8080/translate
 enableQueryExpansion: true
 queryExpansionServiceUrl: http://127.0.0.1:8001/expand
 
+# LLM query expansion configurations (used by SearcherUtil)
+useLLMExpansion: false
+llmModel: "llama-3.1-8b-instant"
+llmServiceUrl: "https://api.groq.com/openai/v1/chat/completions"
+openApiKey: "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"
+numOfTokenFromLLM: 10
+
+# Synonyms expansion
+synonyms: false
+synonymsFile: src/main/resources/synonyms.txt
+
 # --- searching ---
 
 # searchMode: lexical (BM25 only), semantic (Vector only), hybrid (BM25 + Vector)
@@ -72,9 +83,9 @@ maxDocsRetrieved: 50
 
 # --- hybrid search weights ---
 #lexical trust, if the alpha value is higher more lexical trust is done, if it is lower semantical trust
-#rrfAlpha: 0.6
+rrfAlpha: 0.6
 #keep 60, proved to be the best value
-#rrfK: 60
+rrfK: 60
 
 # --- lexical query weights ---
 #phraseBoost: 1.5

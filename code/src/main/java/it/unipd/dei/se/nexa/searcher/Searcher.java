@@ -11,7 +11,8 @@ import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import it.unipd.dei.se.nexa.utility.EmbeddingService;
 import it.unipd.dei.se.nexa.utility.RerankService;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.search.KnnFloatVectorQuery;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -37,8 +38,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+
 
 /**
  * Document searcher.
@@ -53,6 +58,7 @@ public class Searcher {
     private static final ConfigManager CONFIG = ConfigManager.getGlobalConfig();
 
     private static final int PROGRESS_INTERVAL = 500;
+    private static final long PROGRESS_INTERVAL_MS = 5_000;
 
     private final IndexReader reader;
     private final IndexSearcher searcher;
@@ -132,15 +138,20 @@ public class Searcher {
             final int total = claims.size();
             int processed = 0;
             int translatedClaims = 0;
+            long lastProgressLogMs = start;
 
             for (Claim claim : claims) {
                 processed++;
-                if (processed % PROGRESS_INTERVAL == 0 || processed == total) {
-                    final long elapsedMs = System.currentTimeMillis() - start;
+                final long nowMs = System.currentTimeMillis();
+                if (processed % PROGRESS_INTERVAL == 0
+                        || processed == total
+                        || nowMs - lastProgressLogMs >= PROGRESS_INTERVAL_MS) {
+                    final long elapsedMs = nowMs - start;
                     final double rate = processed * 1000.0 / Math.max(1L, elapsedMs);
                     final long etaSec = rate > 0 ? (long) ((total - processed) / rate) : 0L;
                     System.out.printf("  [%5d / %d] %6.1f claims/s, elapsed %3ds, eta %3ds%n",
                             processed, total, rate, elapsedMs / 1000, etaSec);
+                    lastProgressLogMs = nowMs;
                 }
 
                 final ProcessedClaimQuery processedClaim = processor.process(claim);
@@ -237,7 +248,6 @@ public class Searcher {
 
                     float[] newScores = rerankService.rerank(text, docTexts);
 
-                    // 1. Min-Max normalization per gli score originali
                     float minOrig = Float.MAX_VALUE;
                     float maxOrig = -Float.MAX_VALUE;
                     for (ScoreDoc hit : topHits) {
@@ -252,7 +262,6 @@ public class Searcher {
                         }
                     }
 
-                    // 2. Min-Max normalization per i nuovi score (Reranker)
                     float minNew = Float.MAX_VALUE;
                     float maxNew = -Float.MAX_VALUE;
                     for (float s : newScores) {
@@ -267,7 +276,6 @@ public class Searcher {
                         }
                     }
 
-                    // 3. Interpolazione score
                     Double alphaOpt = CONFIG.getDouble("rerankAlpha");
                     float alpha = alphaOpt != null ? alphaOpt.floatValue() : 0.6f;
 
@@ -375,6 +383,41 @@ public class Searcher {
                     builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(
                             new Term(abstractField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
                 }
+            }
+        }
+
+        //query expansion with synonyms
+        if (Boolean.TRUE.equals(CONFIG.getBool("synonyms"))) {
+            try {
+                String synFile = CONFIG.getString("synonymsFile");
+                if (synFile != null) {
+                    java.util.Map<String, String[]> synMap = SearcherUtil.readSynonyms(synFile);
+                    for (String token : text.split("\\W+")) {
+                        if (synMap.containsKey(token)) {
+                            for (String syn : synMap.get(token)) {
+                                builder.add(new BoostQuery(new org.apache.lucene.search.TermQuery(new org.apache.lucene.index.Term(abstractField, syn)), 0.5f), BooleanClause.Occur.SHOULD);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to read synonyms: " + e.getMessage());
+            }
+        }
+
+        //query expansion with LLM
+        if (Boolean.TRUE.equals(CONFIG.getBool("useLLMExpansion"))) {
+            try {
+                String openApiKey = CONFIG.getString("openApiKey");
+                if (openApiKey != null && !openApiKey.isBlank()) {
+                    String[] relatedTerms = SearcherUtil.getRelatedTermsFromLLM(text, openApiKey);
+                    for (String relatedTerm : relatedTerms) {
+                        builder.add(new BoostQuery(new org.apache.lucene.search.TermQuery(new org.apache.lucene.index.Term(abstractField, relatedTerm)), 0.4f), BooleanClause.Occur.SHOULD);
+                        builder.add(new BoostQuery(new org.apache.lucene.search.TermQuery(new org.apache.lucene.index.Term(titleField, relatedTerm)), 0.4f), BooleanClause.Occur.SHOULD);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed LLM expansion: " + e.getMessage());
             }
         }
 

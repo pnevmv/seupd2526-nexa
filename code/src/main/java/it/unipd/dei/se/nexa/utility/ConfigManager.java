@@ -90,7 +90,9 @@ public class ConfigManager {
      */
     public Boolean getBool(String key) {
         Object value = config.get(key);
-        return (value instanceof Boolean b) ? b : null;
+        if (value instanceof Boolean b) return b;
+        if (value instanceof String s) return Boolean.parseBoolean(s);
+        return null;
     }
 
     /**
