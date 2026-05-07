@@ -41,6 +41,35 @@ This step is important because the corpus mixes formal abstracts with informal c
 
 \subsection{Query Expansion}
 
+To merge the vocabulary between informal social media claims and formal scientific abstracts, the system supports three query expansion strategies that can be turned on independently from the configuration file. Each one adds extra terms to the Boolean query produced by the searcher, but with different sources and different boost weights so that the original claim terms always weigh more than the expansions.
+
+\subsubsection{Static Dictionary Expansion}
+
+The simplest strategy is a manually curated synonym dictionary, loaded from the file referenced by the \texttt{synonymsFile} parameter. During query construction (\texttt{buildLexicalQuery}), each token of the claim is looked up in the dictionary, and any matching synonyms (for example, ``car'' $\rightarrow$ ``automobile'', ``vehicle'') are added to the abstract subquery with a boost of \texttt{0.5f}, half the weight of the original term. This keeps the original tokens dominant in the ranking while still letting the expansion contribute. Because the dictionary lives on disk next to the index, the overhead is negligible, but the coverage is limited to whatever entries the file contains.
+
+\subsubsection{LLM-based Expansion}
+
+To capture relations beyond a fixed dictionary, the system can expand the query using a Large Language Model. The claim text is sent to the Groq API with the configured \texttt{openApiKey} and \texttt{llmModel} (currently \texttt{llama-3.1-8b-instant}). The model returns a short list of related terms, for example ``CO\textsubscript{2}'', ``pollution'' and ``glaciers'' for ``climate change''. These terms are added to the title and abstract subqueries with a boost of \texttt{0.4f}.
+
+This route is more expressive than the static dictionary, but it adds a network round trip to every query, and the free tier of the Groq API is rate-limited to roughly 30 requests per minute, which makes it impractical for batch experiments without throttling.
+
+\subsubsection{Pseudo-Relevance Feedback}
+
+The third strategy is Pseudo-Relevance Feedback (PRF), which expands the query using the local index instead of an external resource. PRF works on the assumption that the top-ranked documents returned by a first search are likely to be relevant, and reuses their content as a source of related terms. The procedure has two stages:
+
+\begin{enumerate}
+    \item \textbf{Initial search.} The system runs the original query and keeps the top-$k$ documents (we use $k = 3$).
+    \item \textbf{Expansion and re-search.} The title and abstract of each of those documents are tokenised, numeric and very short tokens are dropped, and the five most frequent remaining terms are appended to the original query with a boost of \texttt{0.3f}. The search is then re-executed against the index.
+\end{enumerate}
+
+The appeal of PRF is that the expansion terms come straight from the corpus, so they are guaranteed to be in-vocabulary for the index. The cost is that every claim now requires two Lucene searches instead of one, which roughly doubles retrieval time. For this reason PRF is disabled in the timed runs we report.
+
+\subsubsection{Earlier Gemini-based Expansion}
+
+An earlier version of the LLM expansion module relied on Google's Gemini API rather than Groq, with a different integration shape. A small Python service ran alongside the Java search engine and acted as a bridge between the two. For each query, the service first looked up the claim text in a local on-disk cache; if the same query had been expanded before, the cached terms were returned immediately. Otherwise the raw claim was forwarded to the Gemini API with a prompt asking the model to ignore emojis and opinions, list related synonyms, and return between 10 and 15 keywords. The response was then written back to the cache and returned to the Java side.
+
+This approach was not carried into the final pipeline. It required running a separate Python service alongside the Java search engine, with its own dependency stack, cache file, and HTTP coupling point between the two processes. The Groq-based path described above covers the same use case (LLM-generated synonyms with on-disk caching) directly from Java, with one fewer moving part. The Gemini API was also less reliable in our setup, which made the trade-off easier.
+
 \subsection{Text Analysis}
 
 The text analysis phase transforms raw textual input into a stream of tokens that can be indexed and later retrieved. The analysis is performed through language-specific analyzer classes, which extend the Apache Lucene \texttt{Analyzer} framework. In our system, we provide separate analyzers for each supported language, namely \texttt{EnglishAnalyzer}, \texttt{FrenchAnalyzer}, and \texttt{GermanAnalyzer}. Each analyzer is configured using language-dependent resources and processing pipelines.
