@@ -17,9 +17,9 @@ Documents are read through an abstract \texttt{CommonParser} class that defines 
 
 \subsubsection{Queries (Claims)}
 
-Queries are loaded from a separate JSON topics file containing a list of claim objects. The file is small and only read once at the start of a run, so we parse it into a \texttt{List<Claim>} using a Jackson \texttt{ObjectMapper}, rather than going through the streaming parser used for documents. Each \texttt{Claim} keeps all three fields: the claim \texttt{index} (used as the query identifier in the TREC run file), the claim \texttt{text}, and the gold \texttt{pubkey} when present (used only at evaluation time).
+Queries are loaded from a separate JSON topics file containing a list of claim objects. We parse it into a \texttt{List<Claim>} using a Jackson \texttt{ObjectMapper}, rather than going through the streaming parser used for documents. Each \texttt{Claim} keeps all three fields: the claim \texttt{index}, the claim \texttt{text}, and the gold \texttt{pubkey} when present (used only at evaluation time).
 
-To keep documents and queries aligned, the cleaning routine described next is applied to the claim text from inside the setter of the \texttt{Claim} class. By the time the searcher iterates over the list, both sides of the retrieval problem have gone through exactly the same preprocessing, which avoids the kind of subtle mismatches that arise when documents and queries are normalised differently.
+To keep documents and queries aligned, the cleaning routine described next is applied to the claim text from inside the setter of the \texttt{Claim} class. By the time the searcher iterates over the list, both sides of the retrieval problem have gone through exactly the same preprocessing, which avoids the kind of subtle mismatches that arise when documents and queries are normalized differently.
 
 \subsubsection{Text Cleaning}
 
@@ -44,7 +44,7 @@ To merge the vocabulary between informal social media claims and formal scientif
 
 \subsubsection{Static Dictionary Expansion}
 
-The simplest strategy is to use tested dictionaries for all the three languages, loaded from the file referenced by the \texttt{synonymsFile} parameter. During query construction (\texttt{buildLexicalQuery}), each token of the claim is looked up in the dictionary, and any matching synonyms (for example, ``car'' $\rightarrow$ ``automobile'', ``vehicle'') are added to the abstract subquery with a boost of \texttt{0.5f}, half the weight of the original term. This keeps the original tokens dominant in the ranking while still letting the expansion contribute. Because the dictionary lives on disk next to the index, the overhead is negligible, but the coverage is limited to whatever entries the file contains.
+The simplest strategy is to use tested dictionaries for all the three languages, loaded from the file referenced by the \texttt{synonymsFile} parameter. During query construction (\texttt{buildLexicalQuery}), each token of the claim is looked up in the dictionary, and any matching synonyms (for example, ``car'' $\rightarrow$ ``automobile'', ``vehicle'') are added to the abstract subquery with a boost of \texttt{0.5f}, half the weight of the original term. This keeps the original tokens dominant in the ranking while still letting the expansion contribute.
 \subsubsection{LLM-based Expansion}
 
 To capture relations beyond a fixed dictionary, the system can expand the query using a Large Language Model. The claim text is sent to the Groq API with the configured \texttt{openApiKey} and \texttt{llmModel} (currently \texttt{llama-3.1-8b-instant}). The model returns a short list of related terms, for example ``CO\textsubscript{2}'', ``pollution'' and ``glaciers'' for ``climate change''. These terms are added to the title and abstract subqueries with a boost of \texttt{0.4f}.
