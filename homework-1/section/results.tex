@@ -319,6 +319,27 @@ SPECTER2 reranking alone drops 7 points below the lexical baseline (0.4020 vs.\ 
 
 As a diagnostic, we also tried pairing SPECTER2 document embeddings with BGE-M3 query embeddings by aligning them into a common 768-dimensional space via PCA. The cross-space cosine collapses to an MRR@5 of approximately 0.025, confirming that the two embedding spaces are geometrically incompatible and cosine similarity is meaningless across them. When fused with BM25, the best alpha drops to 0.10 and the gain over the lexical baseline is between 0.0001 and 0.01 depending on the language, essentially zero. The failure is therefore not limited to SPECTER2's query-side representation: its document representations are also misaligned with what claim retrieval requires. BGE-M3 at $\alpha{=}0.70$ is the encoder of choice.
 
+\subsubsection{Cross-Encoder Fine-Tuning}
+
+On top of the BGE-M3 fusion run we applied the fine-tuned cross-encoder described in Section~\ref{sec:methodology}. Table~\ref{tab:ce-finetune} compares the base checkpoint against the task-specific fine-tuned model, both reranking the top-50 candidates of the hybrid run.
+
+\begin{table}[!ht]
+    \caption{Cross-encoder reranking on top of the BGE-M3 hybrid run, MRR@5. Base is \texttt{ms-marco-MiniLM-L-6-v2}; Fine-tuned is the same model after 2-epoch training on hard negatives from our retrieval pipeline.}
+    \label{tab:ce-finetune}
+    \centering
+    \begin{tabular}{lcccc}
+        \toprule
+        Method & EN & FR & DE & Avg \\
+        \midrule
+        Hybrid baseline (BGE-M3 fusion) & 0.5875 & 0.5990 & 0.4615 & 0.5493 \\
+        $+$ CE reranking (base)         & 0.5875 & 0.5990 & 0.4615 & 0.5493 \\
+        $+$ CE reranking (fine-tuned)   & 0.5606 & 0.6206 & 0.4783 & 0.5532 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Fine-tuning improves French by 2.2 points and German by 1.7 points but degrades English by 2.7 points, for a net average gain of 0.4 points. The asymmetric effect is consistent with the relative size of the per-language training sets: the English training split is substantially larger and the base checkpoint was already well-calibrated for English-style claim-abstract pairs, so fine-tuning on comparatively fewer English examples provides little additional signal while introducing some overfitting. The smaller French and German training sets, by contrast, shift the model toward the specific vocabulary and phrasing of those languages, yielding clear gains. Given the mixed outcome, the fine-tuned reranker is not included in the primary submitted run.
+
 \subsection{Final Submitted Runs}
 \label{subsec:res-final}
 
