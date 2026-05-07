@@ -71,8 +71,8 @@ This approach was not carried into the final pipeline. It required running a sep
 \subsection{Text Analysis}
 
 The text analysis phase transforms raw textual input into a stream of tokens that can be indexed and later retrieved.
-Initially, we tried to use language-specific analyzer classes but using a unique English Analyser after translation was simpler and offered better results.
-The analysis is performed through an analyzer classes, which extend the Apache Lucene \texttt{Analyzer} framework.
+Initially, we tried to use language-specific analyzer classes but using a single English analyzer after translation was simpler and offered better results.
+The analysis is performed through an analyzer class, which extends the Apache Lucene \texttt{Analyzer} framework.
 
 The analyzer follows an architecture composed of three main components:
 
@@ -144,16 +144,6 @@ The system supports multiple strategies for reducing tokens to their canonical f
 
 The selected method is controlled through configuration files and can vary depending on the experimental setup.
 
-% \subsubsection{Multi-Language Analyzer Design}
-
-% A key feature of the system is the use of separate analyzers for each language. Each analyzer loads its own resources, including: Language-specific stopword lists, Synonym dictionaries, Abbreviation mappings, OpenNLP models (tokenizer, POS tagger, lemmatizer).
-
-% These resources are organized in a structured directory hierarchy (e.g., \texttt{resources/en}, \texttt{resources/fr}, \texttt{resources/de}), ensuring clear separation between languages.
-
-% This design allows the system to handle multilingual corpora effectively, as each language benefits from tailored preprocessing and linguistic enrichment.
-
-% Overall, the integration of language-specific analyzers, configurable processing pipelines, and rich linguistic resources allows the system to effectively bridge the gap between informal social media text and formal scientific documents, improving the quality of retrieval.
-
 \subsection{Document Indexing}
 
 The document indexing stage transforms processed publications into a searchable inverted index using Apache Lucene. This structure enables efficient retrieval of relevant documents during the query phase. In our system, indexing is handled by the \texttt{DirectoryIndexer} component, which coordinates parsing, preprocessing, and storage of documents.
@@ -162,9 +152,7 @@ The document indexing stage transforms processed publications into a searchable 
 
 The indexing workflow operates over a collection of JSON files containing scientific publications. Each file is parsed to extract individual documents, represented internally as structured \texttt{Publication} objects. Only documents containing meaningful textual content (such as title or abstract) are considered for indexing.
 
-% A key aspect of the system is its multilingual processing capability. For each publication, the language is automatically detected, and an appropriate language-specific analyzer is applied. Separate analyzers are used for English, French, and German, each configured with its own tokenization and filtering pipeline.
-
-In addition to standard preprocessing, the system supports optional enhancements. When enabled, documents written in languages different from the target language can be translated prior to indexing. Moreover, the system can generate dense vector representations of the textual content by interacting with an external embedding service. These embeddings are stored alongside the indexed documents to support future semantic retrieval extensions.
+In addition to standard preprocessing, the system supports optional enhancements. When enabled, non-English documents are translated into English before indexing using a locally hosted Gemma model served via a dedicated Python HTTP service; the same service is applied to non-English claims at query time. Moreover, the system can generate dense vector representations of the textual content by interacting with an external embedding service. These embeddings are stored alongside the indexed documents to support semantic retrieval.
 
 Each processed publication is converted into a Lucene \texttt{Document} and added to the index using an \texttt{IndexWriter}. During this process, statistics such as the number of indexed documents and total indexing time are recorded.
 
@@ -210,7 +198,7 @@ Instead of relying on a single-field representation, the system generates separa
 
 These subqueries are combined using a Boolean query with \texttt{SHOULD} clauses, allowing documents to be retrieved if they match either field. This formulation increases recall while maintaining flexibility in matching.
 
-To further refine the ranking, different importance weights are assigned to each field through boosting. In particular, matches occurring in the title field are given higher importance than those in the abstract. This results in a weighted query structure that prioritizes concise and informative matches while still considering broader contextual information.
+To further refine the ranking, different importance weights are assigned to each field through boosting. In particular, matches occurring in the abstract field are given higher importance than those in the title, since social media claims typically paraphrase scientific findings rather than paper titles. This results in a weighted query structure that prioritizes the abstract as the primary evidence field while still drawing a smaller signal from the title.
 
 \subsubsection{Ranking Mechanism}
 

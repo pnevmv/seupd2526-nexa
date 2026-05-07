@@ -11,7 +11,7 @@ The best results were obtained by combining lexical and semantic evidence. Fusin
 
 \subsection*{Future Work}
 
-Future work will investigate stronger task-specific reranking models, in particular cross-encoders fine-tuned on claim--publication relevance pairs. Unlike the current bi-encoder fusion approach, cross-encoders can jointly process the claim and the candidate abstract, which may help capture the semantic relation between informal social media claims and formal scientific abstracts more precisely.
+Our experiments with task-specific cross-encoder fine-tuning showed mixed results: the fine-tuned model improved French and German MRR@5 but degraded English, suggesting that the effect of fine-tuning is language-dependent and sensitive to training set size. Future work could investigate better fine-tuning strategies, such as language-balanced sampling, larger training sets, or stronger base models, to obtain more consistent gains across all languages.
 
 We also plan to explore more effective query reformulation strategies, including LLM-based rewriting of claims into retrieval-oriented scientific queries. Instead of simply adding synonyms to the original query, this approach could produce more formal and scientifically grounded formulations of social media claims, making them closer to the language used in scientific publications.
 

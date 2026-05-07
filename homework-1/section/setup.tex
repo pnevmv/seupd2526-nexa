@@ -3,8 +3,8 @@
 
 \subsection{Used Collections}
 
-We used the datasets provided by CheckThat! on \url{https://huggingface.co/datasets/sschellhammer/CT26_Task1_SourceRetrievalForScientificWebClaims} \\
-It consist of 10 json files:
+We used the datasets provided by CheckThat! on \url{https://huggingface.co/datasets/sschellhammer/CT26_Task1_SourceRetrievalForScientificWebClaims}.
+It consists of 10 json files:
 \begin{itemize}
 	\item collection\_data.json - 10000 documents
 	\item en\_dev.json - 3905 posts
@@ -17,6 +17,8 @@ It consist of 10 json files:
 	\item final\_fr\_test.json - 1220 posts
 	\item final\_de\_test.json - 876 posts
 \end{itemize}
+
+The dev splits (\texttt{en\_dev}, \texttt{fr\_dev}, \texttt{de\_dev}) were used exclusively for hyperparameter tuning and all reported scores in Section~\ref{sec:results} are computed on these splits. The test splits (\texttt{final\_en\_test}, \texttt{final\_fr\_test}, \texttt{final\_de\_test}) were treated as blind sets: no parameter was adjusted based on them and they were used only for the final official submission.
 
 \subsection{Evaluation Measure}
 The main evaluation measure used is the Mean Reciprocal Rank at 5 (MRR@5):
@@ -34,7 +36,7 @@ With:
 \end{itemize}
 
 \subsection{Git repository and its organization}
-The entire project, including the source code and some runs is available on Bitbucket at the following URL : \url{https://bitbucket.org/upd-dei-stud-prj/seupd2526-nexa/} \\
+The entire project, including the source code and some runs, is available on Bitbucket at \url{https://bitbucket.org/upd-dei-stud-prj/seupd2526-nexa/}.
 The repository is structured as follows:
 \begin{itemize}
 	\item \texttt{code}: the source code of the project
@@ -44,7 +46,8 @@ The repository is structured as follows:
 
 \subsection{Hardware used for experiments}
 \begin{itemize}
-	\item CPU: M4 (6 efficiency core and 4 performance core)
+	\item CPU: M4 (6 efficiency cores and 4 performance cores)
 	\item RAM: 16GB
 	\item GPU: 10-core
+	\item Storage: 512GB SSD
 \end{itemize}
