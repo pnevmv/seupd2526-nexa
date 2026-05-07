@@ -17,9 +17,9 @@ Documents are read through an abstract \texttt{CommonParser} class that defines 
 
 \subsubsection{Queries (Claims)}
 
-Queries are loaded from a separate JSON topics file containing a list of claim objects. The file is small and only read once at the start of a run, so we parse it into a \texttt{List<Claim>} using a Jackson \texttt{ObjectMapper}, rather than going through the streaming parser used for documents. Each \texttt{Claim} keeps all three fields: the claim \texttt{index} (used as the query identifier in the TREC run file), the claim \texttt{text}, and the gold \texttt{pubkey} when present (used only at evaluation time).
+Queries are loaded from a separate JSON topics file containing a list of claim objects. We parse it into a \texttt{List<Claim>} using a Jackson \texttt{ObjectMapper}, rather than going through the streaming parser used for documents. Each \texttt{Claim} keeps all three fields: the claim \texttt{index}, the claim \texttt{text}, and the gold \texttt{pubkey} when present (used only at evaluation time).
 
-To keep documents and queries aligned, the cleaning routine described next is applied to the claim text from inside the setter of the \texttt{Claim} class. By the time the searcher iterates over the list, both sides of the retrieval problem have gone through exactly the same preprocessing, which avoids the kind of subtle mismatches that arise when documents and queries are normalised differently.
+To keep documents and queries aligned, the cleaning routine described next is applied to the claim text from inside the setter of the \texttt{Claim} class. By the time the searcher iterates over the list, both sides of the retrieval problem have gone through exactly the same preprocessing, which avoids the kind of subtle mismatches that arise when documents and queries are normalized differently.
 
 \subsubsection{Text Cleaning}
 
