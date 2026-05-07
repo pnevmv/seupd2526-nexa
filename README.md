@@ -1,6 +1,6 @@
 # Search Engines (SE) - NEXA Group - CheckThat! CLEF 2026 Task 1
 
-This repository will contains the code and papers produced in the Search Engines course. A.Y. 2025/2026 for the participation of the group NEXA at [CheckThat! 2026 Task 1](https://checkthat.gitlab.io/clef2026/task1/) at [CLEF 2026](https://clef2026.clef-initiative.eu/).
+This repository contains the code and papers produced in the Search Engines course, A.Y. 2025/2026, for the participation of the group NEXA at [CheckThat! 2026 Task 1](https://checkthat.gitlab.io/clef2026/task1/) at [CLEF 2026](https://clef2026.clef-initiative.eu/).
 
 *Search Engines* is a course of the
 
@@ -314,7 +314,8 @@ java -cp code/target/nexa-0.1-jar-with-dependencies.jar \
 ### 5. Run search
 
 ```bash
-java -cp code/target/nexa-0.1-jar-with-dependencies.jar \
+java --add-modules jdk.incubator.vector \
+  -cp code/target/nexa-0.1-jar-with-dependencies.jar \
   it.unipd.dei.se.nexa.searcher.Searcher
 ```
 
