@@ -1,0 +1,78 @@
+
+[01/9] BM25 k1=1.2 b=0.75
+  Rebuilding index with similarity=BM25 ...
+  Indexing complete. 10000 documents in target in 11871 ms.  (13s)
+  EN: MRR@5=0.4838  missing=1120/3905
+  FR: MRR@5=0.4887  missing=191/702
+  DE: MRR@5=0.3342  missing=166/386
+
+[02/9] Classic (TF-IDF)
+  Rebuilding index with similarity=CLASSIC ...
+  Indexing complete. 10000 documents in target in 11731 ms.  (12s)
+  EN: MRR@5=0.4130  missing=1332/3905
+  FR: MRR@5=0.3948  missing=240/702
+  DE: MRR@5=0.2715  missing=190/386
+
+[03/9] LMD mu=500
+  Rebuilding index with similarity=LMD ...
+  Indexing complete. 10000 documents in target in 11707 ms.  (12s)
+  EN: MRR@5=0.4683  missing=1174/3905
+  FR: MRR@5=0.4652  missing=202/702
+  DE: MRR@5=0.3357  missing=157/386
+
+[04/9] LMD mu=1000
+  Rebuilding index with similarity=LMD ...
+  Indexing complete. 10000 documents in target in 12445 ms.  (13s)
+  EN: MRR@5=0.4526  missing=1231/3905
+  FR: MRR@5=0.4434  missing=205/702
+  DE: MRR@5=0.3098  missing=160/386
+
+[05/9] LMD mu=2000
+  Rebuilding index with similarity=LMD ...
+  Indexing complete. 10000 documents in target in 11919 ms.  (12s)
+  EN: MRR@5=0.4329  missing=1295/3905
+  FR: MRR@5=0.4123  missing=211/702
+  DE: MRR@5=0.2947  missing=170/386
+
+[06/9] LMD mu=4000
+  Rebuilding index with similarity=LMD ...
+  Indexing complete. 10000 documents in target in 12314 ms.  (13s)
+  EN: MRR@5=0.4059  missing=1349/3905
+  FR: MRR@5=0.3763  missing=215/702
+  DE: MRR@5=0.2662  missing=172/386
+
+[07/9] LMJM lambda=0.1
+  Rebuilding index with similarity=LMJM ...
+  Indexing complete. 10000 documents in target in 12191 ms.  (13s)
+  EN: MRR@5=0.4724  missing=1201/3905
+  FR: MRR@5=0.4548  missing=209/702
+  DE: MRR@5=0.3161  missing=170/386
+
+[08/9] LMJM lambda=0.3
+  Rebuilding index with similarity=LMJM ...
+  Indexing complete. 10000 documents in target in 11633 ms.  (12s)
+  EN: MRR@5=0.4781  missing=1170/3905
+  FR: MRR@5=0.4671  missing=204/702
+  DE: MRR@5=0.3203  missing=167/386
+
+[09/9] LMJM lambda=0.5
+  Rebuilding index with similarity=LMJM ...
+  Indexing complete. 10000 documents in target in 11604 ms.  (12s)
+  EN: MRR@5=0.4784  missing=1157/3905
+  FR: MRR@5=0.4706  missing=196/702
+  DE: MRR@5=0.3220  missing=168/386
+
+Configs restored.
+
+Configuration          | EN MRR@5 | FR MRR@5 | DE MRR@5 | Avg MRR@5
+-----------------------+----------+----------+----------+-----------
+BM25 k1=1.2 b=0.75     |   0.4838 |   0.4887 |   0.3342 |    0.4356
+Classic (TF-IDF)       |   0.4130 |   0.3948 |   0.2715 |    0.3597
+LMD mu=500             |   0.4683 |   0.4652 |   0.3357 |    0.4231
+LMD mu=1000            |   0.4526 |   0.4434 |   0.3098 |    0.4019
+LMD mu=2000            |   0.4329 |   0.4123 |   0.2947 |    0.3800
+LMD mu=4000            |   0.4059 |   0.3763 |   0.2662 |    0.3495
+LMJM lambda=0.1        |   0.4724 |   0.4548 |   0.3161 |    0.4145
+LMJM lambda=0.3        |   0.4781 |   0.4671 |   0.3203 |    0.4218
+LMJM lambda=0.5        |   0.4784 |   0.4706 |   0.3220 |    0.4236
+-----------------------+----------+----------+----------+-----------

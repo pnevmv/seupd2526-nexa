@@ -72,9 +72,11 @@ This approach was not carried into the final pipeline. It required running a sep
 
 \subsection{Text Analysis}
 
-The text analysis phase transforms raw textual input into a stream of tokens that can be indexed and later retrieved. The analysis is performed through language-specific analyzer classes, which extend the Apache Lucene \texttt{Analyzer} framework. In our system, we provide separate analyzers for each supported language, namely \texttt{EnglishAnalyzer}, \texttt{FrenchAnalyzer}, and \texttt{GermanAnalyzer}. Each analyzer is configured using language-dependent resources and processing pipelines.
+The text analysis phase transforms raw textual input into a stream of tokens that can be indexed and later retrieved.
+Initially, we tried to use language-specific analyzer classes but using a unique English Analyser after translation was simpler and offered better results.
+The analysis is performed through an analyzer classes, which extend the Apache Lucene \texttt{Analyzer} framework.
 
-All analyzers follow a common architecture composed of three main components:
+The analyzer follows an architecture composed of three main components:
 
 \begin{itemize}
     \item \textbf{Tokenizer:} Responsible for splitting the input text into raw tokens.
@@ -82,7 +84,7 @@ All analyzers follow a common architecture composed of three main components:
     \item \textbf{Stemming/Lemmatization:} Reduces tokens to their base or root forms to improve generalization.
 \end{itemize}
 
-The overall pipeline is dynamically configured through external YAML configuration files, allowing flexible adaptation of processing strategies for different languages and experimental settings.
+The overall pipeline is dynamically configured through external YAML configuration files, allowing flexible adaptation of processing strategies and experimental settings.
 
 \subsubsection{Tokenizer Configurations}
 
@@ -95,7 +97,7 @@ Multiple tokenization strategies are supported, enabling the system to handle di
     \item \textbf{NLP Tokenizer:} Uses Apache OpenNLP models to perform linguistically informed tokenization.
 \end{itemize}
 
-The tokenizer type is selected through configuration files, allowing different languages or datasets to use the most suitable strategy.
+The tokenizer type is selected through configuration files, allowing to try different strategies.
 
 \subsubsection{Token Filters}
 
@@ -127,7 +129,7 @@ To improve semantic representation, additional filters are applied:
 
 \paragraph{Language-Specific Filters}
 
-Each language analyzer applies additional filters tailored to its linguistic characteristics:
+Each analyzer applies additional filters tailored to linguistic characteristics:
 
 \begin{itemize}
     \item English-specific filters (e.g., possessive removal, English stopwords)
@@ -136,23 +138,23 @@ Each language analyzer applies additional filters tailored to its linguistic cha
 \end{itemize}
 
 This design ensures that each language is processed according to its grammatical and lexical properties.
+Since we translate everything to English, we are using only English-specific filters.
 
 \subsubsection{Stemming and Lemmatization}
 
 The system supports multiple strategies for reducing tokens to their canonical forms: \textbf{Porter Stemmer}, \textbf{Snowball Stemmer}, \textbf{OpenNLP Lemmatizer}, \textbf{No Stemming}.
 
-The selected method is controlled through configuration files and can vary depending on the language and experimental setup.
+The selected method is controlled through configuration files and can vary depending on the experimental setup.
 
-\subsubsection{Multi-Language Analyzer Design}
+% \subsubsection{Multi-Language Analyzer Design}
 
-A key feature of the system is the use of separate analyzers for each language. Each analyzer loads its own resources, including: Language-specific stopword lists, Synonym dictionaries, Abbreviation mappings, OpenNLP models (tokenizer, POS tagger, lemmatizer).
+% A key feature of the system is the use of separate analyzers for each language. Each analyzer loads its own resources, including: Language-specific stopword lists, Synonym dictionaries, Abbreviation mappings, OpenNLP models (tokenizer, POS tagger, lemmatizer).
 
-These resources are organized in a structured directory hierarchy (e.g., \texttt{resources/en}, \texttt{resources/fr}, \texttt{resources/de}), ensuring clear separation between languages.
+% These resources are organized in a structured directory hierarchy (e.g., \texttt{resources/en}, \texttt{resources/fr}, \texttt{resources/de}), ensuring clear separation between languages.
 
-This design allows the system to handle multilingual corpora effectively, as each language benefits from tailored preprocessing and linguistic enrichment.
+% This design allows the system to handle multilingual corpora effectively, as each language benefits from tailored preprocessing and linguistic enrichment.
 
-
-Overall, the integration of language-specific analyzers, configurable processing pipelines, and rich linguistic resources allows the system to effectively bridge the gap between informal social media text and formal scientific documents, improving the quality of retrieval.
+% Overall, the integration of language-specific analyzers, configurable processing pipelines, and rich linguistic resources allows the system to effectively bridge the gap between informal social media text and formal scientific documents, improving the quality of retrieval.
 
 \subsection{Document Indexing}
 
@@ -162,7 +164,7 @@ The document indexing stage transforms processed publications into a searchable 
 
 The indexing workflow operates over a collection of JSON files containing scientific publications. Each file is parsed to extract individual documents, represented internally as structured \texttt{Publication} objects. Only documents containing meaningful textual content (such as title or abstract) are considered for indexing.
 
-A key aspect of the system is its multilingual processing capability. For each publication, the language is automatically detected, and an appropriate language-specific analyzer is applied. Separate analyzers are used for English, French, and German, each configured with its own tokenization and filtering pipeline.
+% A key aspect of the system is its multilingual processing capability. For each publication, the language is automatically detected, and an appropriate language-specific analyzer is applied. Separate analyzers are used for English, French, and German, each configured with its own tokenization and filtering pipeline.
 
 In addition to standard preprocessing, the system supports optional enhancements. When enabled, documents written in languages different from the target language can be translated prior to indexing. Moreover, the system can generate dense vector representations of the textual content by interacting with an external embedding service. These embeddings are stored alongside the indexed documents to support future semantic retrieval extensions.
 
@@ -170,7 +172,7 @@ Each processed publication is converted into a Lucene \texttt{Document} and adde
 
 \subsubsection{Field Representation}
 
-Document content is stored in structured fields, such as title and abstract, each processed using the appropriate analyzer based on the detected language. A custom field type is defined to support advanced indexing features, including term frequencies, positional information, and character offsets.
+Document content is stored in structured fields, such as title and abstract. A custom field type is defined to support advanced indexing features, including term frequencies, positional information, and character offsets.
 
 The system also enables storage of term vectors, which allows more advanced retrieval functionalities such as phrase matching, proximity queries, and potential re-ranking strategies. Additionally, the original textual content can be stored in the index to support downstream processing steps.
 

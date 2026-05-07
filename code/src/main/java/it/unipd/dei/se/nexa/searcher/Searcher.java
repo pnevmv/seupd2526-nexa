@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unipd.dei.se.nexa.analyzer.EnglishAnalyzer;
 import it.unipd.dei.se.nexa.parser.Claim;
 import it.unipd.dei.se.nexa.parser.Publication;
+import java.io.IOException;
 import it.unipd.dei.se.nexa.utility.ConfigManager;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import it.unipd.dei.se.nexa.utility.EmbeddingService;
@@ -16,7 +17,20 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.StoredFields;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.LMDirichletSimilarity;
+import org.apache.lucene.search.similarities.LMJelinekMercerSimilarity;
+import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.QueryBuilder;
 
@@ -71,14 +85,7 @@ public class Searcher {
         this.analyzer = analyzer;
         this.reader = DirectoryReader.open(FSDirectory.open(indexDir));
         this.searcher = new IndexSearcher(reader);
-
-        Double k1Opt = CONFIG.getDouble("bm25_k1");
-        float k1 = k1Opt != null ? k1Opt.floatValue() : 1.2f;
-
-        Double bOpt = CONFIG.getDouble("bm25_b");
-        float b = bOpt != null ? bOpt.floatValue() : 0.75f;
-
-        this.searcher.setSimilarity(new BM25Similarity(k1, b));
+        this.searcher.setSimilarity(buildSimilarity());
 
         this.titleField = Publication.getLocalizedFieldName(Publication.FIELD_TITLE, "en");
         this.abstractField = Publication.getLocalizedFieldName(Publication.FIELD_ABSTRACT, "en");
@@ -303,10 +310,10 @@ public class Searcher {
     }
 
     public static void main(String[] args) throws Exception {
-        final Path indexDir = Paths.get(requireConfig("indexPath"));
-        final Path topicsFile = Paths.get(requireConfig("topics"));
+        final Path indexDir = ConfigManager.resolvePath(requireConfig("indexPath"));
+        final Path topicsFile = ConfigManager.resolvePath(requireConfig("topics"));
         final String runID = requireConfig("runID");
-        final Path runDir = Paths.get(requireConfig("runPath"));
+        final Path runDir = ConfigManager.resolvePath(requireConfig("runPath"));
         final int maxDocsRetrieved = CONFIG.getInt("maxDocsRetrieved");
 
         Files.createDirectories(runDir);
@@ -316,50 +323,65 @@ public class Searcher {
         }
     }
 
-    private Query buildLexicalQuery(final String text) {
-        final BooleanQuery.Builder builder = new BooleanQuery.Builder();
-        final Query titleQuery = queryBuilder.createBooleanQuery(titleField, text, BooleanClause.Occur.SHOULD);
-        final Query abstractQuery = queryBuilder.createBooleanQuery(abstractField, text, BooleanClause.Occur.SHOULD);
+    private Query buildLexicalQuery(final String text) throws IOException {
+        float titleBoost    = floatConfig("titleBoost",    2.0f);
+        float abstractBoost = floatConfig("abstractBoost", 1.0f);
+        float venueBoost    = floatConfig("venueBoost",    0.0f);
+        float authorsBoost  = floatConfig("authorsBoost",  0.0f);
 
-        Double titleBoostOpt = CONFIG.getDouble("titleBoost");
-        float titleBoost = titleBoostOpt != null ? titleBoostOpt.floatValue() : 2.0f;
-        Double absBoostOpt = CONFIG.getDouble("abstractBoost");
-        float abstractBoost = absBoostOpt != null ? absBoostOpt.floatValue() : 1.0f;
+        // --- optional IDF-based query pruning ---
+        final int topK = CONFIG.getInt("topKQueryTerms") != null ? CONFIG.getInt("topKQueryTerms") : 0;
+        final String queryText = topK > 0 ? pruneToTopKTerms(text, topK) : text;
+        if (queryText == null || queryText.isBlank()) return null;
 
-        if (titleQuery != null) {
-            builder.add(new BoostQuery(titleQuery, titleBoost), BooleanClause.Occur.SHOULD);
+        // --- query mode ---
+        final String mode = CONFIG.getString("queryMode");
+
+        if ("mixed".equalsIgnoreCase(mode) || "must".equalsIgnoreCase(mode)) {
+            return buildMixedQuery(queryText, titleBoost, abstractBoost, venueBoost, authorsBoost, mode);
         }
-        if (abstractQuery != null) {
-            builder.add(new BoostQuery(abstractQuery, abstractBoost), BooleanClause.Occur.SHOULD);
+
+        // --- default: all SHOULD ---
+        final BooleanQuery.Builder builder = new BooleanQuery.Builder();
+
+        Query titleQ = queryBuilder.createBooleanQuery(titleField, queryText, BooleanClause.Occur.SHOULD);
+        if (titleQ != null)
+            builder.add(new BoostQuery(titleQ, titleBoost), BooleanClause.Occur.SHOULD);
+
+        Query abstractQ = queryBuilder.createBooleanQuery(abstractField, queryText, BooleanClause.Occur.SHOULD);
+        if (abstractQ != null)
+            builder.add(new BoostQuery(abstractQ, abstractBoost), BooleanClause.Occur.SHOULD);
+
+        if (venueBoost > 0) {
+            Query venueQ = queryBuilder.createBooleanQuery(Publication.FIELD_VENUE, queryText, BooleanClause.Occur.SHOULD);
+            if (venueQ != null)
+                builder.add(new BoostQuery(venueQ, venueBoost), BooleanClause.Occur.SHOULD);
+        }
+
+        if (authorsBoost > 0) {
+            Query authorsQ = queryBuilder.createBooleanQuery(Publication.FIELD_AUTHORS, queryText, BooleanClause.Occur.SHOULD);
+            if (authorsQ != null)
+                builder.add(new BoostQuery(authorsQ, authorsBoost), BooleanClause.Occur.SHOULD);
         }
 
         Double phraseBoostOpt = CONFIG.getDouble("phraseBoost");
         if (phraseBoostOpt != null && phraseBoostOpt > 0) {
-            Query titlePhrase = queryBuilder.createPhraseQuery(titleField, text);
-            if (titlePhrase != null) {
+            Query titlePhrase = queryBuilder.createPhraseQuery(titleField, queryText);
+            if (titlePhrase != null)
                 builder.add(new BoostQuery(titlePhrase, phraseBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
-            }
-            Query abstractPhrase = queryBuilder.createPhraseQuery(abstractField, text);
-            if (abstractPhrase != null) {
+            Query abstractPhrase = queryBuilder.createPhraseQuery(abstractField, queryText);
+            if (abstractPhrase != null)
                 builder.add(new BoostQuery(abstractPhrase, phraseBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
-            }
         }
 
         Double fuzzyBoostOpt = CONFIG.getDouble("fuzzyBoost");
         if (fuzzyBoostOpt != null && fuzzyBoostOpt > 0) {
-            String[] tokens = text.split("\\W+");
-            for (String token : tokens) {
+            for (String token : queryText.split("\\W+")) {
                 if (token.length() > 3) {
-                    builder.add(
-                            new BoostQuery(
-                                    new org.apache.lucene.search.FuzzyQuery(
-                                            new org.apache.lucene.index.Term(titleField, token), 1),
-                                    fuzzyBoostOpt.floatValue()),
-                            BooleanClause.Occur.SHOULD);
-                    builder.add(new BoostQuery(
-                            new org.apache.lucene.search.FuzzyQuery(
-                                    new org.apache.lucene.index.Term(abstractField, token), 1),
-                            fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
+                    builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(
+                            new Term(titleField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
+                    builder.add(new BoostQuery(new org.apache.lucene.search.FuzzyQuery(
+                            new Term(abstractField, token), 1), fuzzyBoostOpt.floatValue()), BooleanClause.Occur.SHOULD);
                 }
             }
         }
@@ -403,6 +425,105 @@ public class Searcher {
         return combined.clauses().isEmpty() ? null : combined;
     }
 
+    /**
+     * Builds a mixed-mode query: for each high-IDF term, require it to appear
+     * in at least one of (title, abstract) — MUST. Remaining terms are SHOULD.
+     * In "must" mode, all terms are MUST.
+     */
+    private Query buildMixedQuery(String text, float titleBoost, float abstractBoost,
+                                   float venueBoost, float authorsBoost, String mode) throws IOException {
+        // Analyse text to get individual tokens
+        java.util.List<String> tokens = new java.util.ArrayList<>();
+        try (org.apache.lucene.analysis.TokenStream ts = analyzer.tokenStream(abstractField,
+                new java.io.StringReader(text))) {
+            ts.reset();
+            org.apache.lucene.analysis.tokenattributes.CharTermAttribute termAtt =
+                    ts.addAttribute(org.apache.lucene.analysis.tokenattributes.CharTermAttribute.class);
+            while (ts.incrementToken()) tokens.add(termAtt.toString());
+            ts.end();
+        }
+
+        // Deduplicate preserving insertion order
+        java.util.List<String> unique = new java.util.ArrayList<>(new java.util.LinkedHashSet<>(tokens));
+        if (unique.isEmpty()) return null;
+
+        // Sort by ascending docFreq (= descending IDF) to find most discriminative terms
+        unique.sort((a, b) -> {
+            try {
+                return Integer.compare(reader.docFreq(new Term(abstractField, a)),
+                                       reader.docFreq(new Term(abstractField, b)));
+            } catch (IOException e) { return 0; }
+        });
+
+        int mustCount = "must".equalsIgnoreCase(mode)
+                ? unique.size()
+                : Math.min(CONFIG.getInt("mustTermCount") != null ? CONFIG.getInt("mustTermCount") : 3,
+                           unique.size());
+
+        final BooleanQuery.Builder outer = new BooleanQuery.Builder();
+
+        for (int i = 0; i < unique.size(); i++) {
+            String term = unique.get(i);
+            BooleanClause.Occur occur = i < mustCount ? BooleanClause.Occur.MUST : BooleanClause.Occur.SHOULD;
+
+            if (occur == BooleanClause.Occur.MUST) {
+                // Term must appear in at least one field
+                BooleanQuery.Builder fieldOr = new BooleanQuery.Builder();
+                fieldOr.add(new TermQuery(new Term(titleField, term)),    BooleanClause.Occur.SHOULD);
+                fieldOr.add(new TermQuery(new Term(abstractField, term)), BooleanClause.Occur.SHOULD);
+                outer.add(fieldOr.build(), BooleanClause.Occur.MUST);
+            } else {
+                // SHOULD: boost per field
+                outer.add(new BoostQuery(new TermQuery(new Term(titleField, term)),    titleBoost),    BooleanClause.Occur.SHOULD);
+                outer.add(new BoostQuery(new TermQuery(new Term(abstractField, term)), abstractBoost), BooleanClause.Occur.SHOULD);
+            }
+        }
+
+        if (venueBoost > 0) {
+            Query venueQ = queryBuilder.createBooleanQuery(Publication.FIELD_VENUE, text, BooleanClause.Occur.SHOULD);
+            if (venueQ != null) outer.add(new BoostQuery(venueQ, venueBoost), BooleanClause.Occur.SHOULD);
+        }
+        if (authorsBoost > 0) {
+            Query authorsQ = queryBuilder.createBooleanQuery(Publication.FIELD_AUTHORS, text, BooleanClause.Occur.SHOULD);
+            if (authorsQ != null) outer.add(new BoostQuery(authorsQ, authorsBoost), BooleanClause.Occur.SHOULD);
+        }
+
+        BooleanQuery q = outer.build();
+        return q.clauses().isEmpty() ? null : q;
+    }
+
+    /**
+     * Analyzes the text and keeps only the top-K terms by IDF (lowest docFreq first).
+     * Returns a space-joined string suitable for passing back to createBooleanQuery.
+     */
+    private String pruneToTopKTerms(String text, int k) throws IOException {
+        java.util.Map<String, Integer> termDf = new java.util.LinkedHashMap<>();
+        try (org.apache.lucene.analysis.TokenStream ts = analyzer.tokenStream(abstractField,
+                new java.io.StringReader(text))) {
+            ts.reset();
+            org.apache.lucene.analysis.tokenattributes.CharTermAttribute termAtt =
+                    ts.addAttribute(org.apache.lucene.analysis.tokenattributes.CharTermAttribute.class);
+            while (ts.incrementToken()) {
+                String t = termAtt.toString();
+                if (!termDf.containsKey(t)) {
+                    termDf.put(t, reader.docFreq(new Term(abstractField, t)));
+                }
+            }
+            ts.end();
+        }
+
+        return termDf.entrySet().stream()
+                .sorted(java.util.Map.Entry.comparingByValue())  // ascending DF = highest IDF first
+                .limit(k)
+                .map(java.util.Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.joining(" "));
+    }
+
+    private float floatConfig(String key, float defaultVal) {
+        Double v = CONFIG.getDouble(key);
+        return v != null ? v.floatValue() : defaultVal;
+    }
+
     private Query buildSemanticQuery(final float[] queryEmbedding) {
         if (queryEmbedding != null && queryEmbedding.length > 0) {
             return new KnnFloatVectorQuery("pub_vector", queryEmbedding, maxDocsRetrieved);
@@ -430,14 +551,15 @@ public class Searcher {
         Double kOpt = CONFIG.getDouble("rrfK");
         int k = kOpt != null ? kOpt.intValue() : 60;
 
-        int tokenCount = queryText != null ? queryText.trim().split("\\s+").length : 0;
-        final double alpha;
-        if (tokenCount < 10) {
-            Double shortOpt = CONFIG.getDouble("rrfAlphaShortQuery");
-            alpha = shortOpt != null ? shortOpt : 0.8;
+        int wordCount = queryText == null ? 0 : queryText.trim().split("\\s+").length;
+        Double shortAlphaOpt = CONFIG.getDouble("rrfAlphaShortQuery");
+        Double longAlphaOpt = CONFIG.getDouble("rrfAlphaLongQuery");
+        double alpha;
+        if (shortAlphaOpt != null && longAlphaOpt != null) {
+            alpha = wordCount <= 5 ? shortAlphaOpt : longAlphaOpt;
         } else {
-            Double longOpt = CONFIG.getDouble("rrfAlphaLongQuery");
-            alpha = longOpt != null ? longOpt : 0.2;
+            Double alphaOpt = CONFIG.getDouble("rrfAlpha");
+            alpha = alphaOpt != null ? alphaOpt : 0.5;
         }
 
         if (lexicalDocs != null && lexicalDocs.scoreDocs != null) {
@@ -508,6 +630,31 @@ public class Searcher {
                 .limit(numTerms)
                 .map(java.util.Map.Entry::getKey)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    private static Similarity buildSimilarity() {
+        final String simName = CONFIG.getString("similarity");
+        if (simName == null || simName.isBlank() || "BM25".equalsIgnoreCase(simName)) {
+            Double k1Opt = CONFIG.getDouble("bm25_k1");
+            Double bOpt  = CONFIG.getDouble("bm25_b");
+            float k1 = k1Opt != null ? k1Opt.floatValue() : 1.2f;
+            float b  = bOpt  != null ? bOpt.floatValue()  : 0.75f;
+            return new BM25Similarity(k1, b);
+        }
+        return switch (simName.toUpperCase()) {
+            case "CLASSIC", "TFIDF" -> new ClassicSimilarity();
+            case "LMD", "LMDIRICHLET" -> {
+                Double muOpt = CONFIG.getDouble("lmd_mu");
+                float mu = muOpt != null ? muOpt.floatValue() : 2000f;
+                yield new LMDirichletSimilarity(mu);
+            }
+            case "LMJM", "LMJELINEKMERCER" -> {
+                Double lambdaOpt = CONFIG.getDouble("lmjm_lambda");
+                float lambda = lambdaOpt != null ? lambdaOpt.floatValue() : 0.1f;
+                yield new LMJelinekMercerSimilarity(lambda);
+            }
+            default -> throw new IllegalArgumentException("Unknown similarity: " + simName);
+        };
     }
 
     private static String requireConfig(final String key) {

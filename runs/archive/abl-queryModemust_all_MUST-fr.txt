@@ -1,0 +1,6 @@
+288 Q0 4897 0 5.682316 abl-queryModemust_all_MUST-fr
+616 Q0 285 0 52.177490 abl-queryModemust_all_MUST-fr
+815 Q0 1030 0 51.530495 abl-queryModemust_all_MUST-fr
+1073 Q0 11 0 28.015518 abl-queryModemust_all_MUST-fr
+1510 Q0 256 0 16.388367 abl-queryModemust_all_MUST-fr
+2197 Q0 6210 0 11.802757 abl-queryModemust_all_MUST-fr

@@ -212,3 +212,53 @@ zum
 zur
 zwar
 zwischen
+
+# --- added: missing adverbs/particles/verbs (post GermanNorm+ICU forms) ---
+sogar
+ja
+immer
+ausserdem
+viel
+mehr
+jemand
+uberaus
+genauso
+bloss
+lassen
+zusammen
+kommen
+darauf
+rein
+geben
+drauf
+jeweil
+mithilf
+# cross-language leakage
+ne
+un
+ett
+the
+and
+
+# --- second round: stems/conjugations/inflections ---
+kommt
+kommen
+erzahlen
+erzahlt
+ette
+jemanden
+jemandes
+jemandem
+# English function words leaking into DE field
+of
+in
+to
+is
+with
+was
+an
+for
+are
+by
+that
+this

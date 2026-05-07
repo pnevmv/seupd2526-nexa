@@ -14,6 +14,7 @@ import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 
+import org.apache.lucene.analysis.en.EnglishMinimalStemFilter;
 import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
 import org.apache.lucene.analysis.en.KStemFilter;
 import org.apache.lucene.analysis.en.PorterStemFilter;
@@ -69,6 +70,7 @@ public class EnglishAnalyzer extends Analyzer {
         PORTER,
         SNOWBALL,
         KSTEM,
+        ENGLISHMINIMAL,
         NLP,
         NONE,
     }
@@ -150,6 +152,7 @@ public class EnglishAnalyzer extends Analyzer {
             case "Porter" -> this.stemFilterType = StemFilterType.PORTER;
             case "SnowBall" -> this.stemFilterType = StemFilterType.SNOWBALL;
             case "KStem" -> this.stemFilterType = StemFilterType.KSTEM;
+            case "EnglishMinimal" -> this.stemFilterType = StemFilterType.ENGLISHMINIMAL;
             case "Nlp" -> this.stemFilterType = StemFilterType.NLP;
             default -> this.stemFilterType = StemFilterType.NONE;
         }
@@ -186,8 +189,8 @@ public class EnglishAnalyzer extends Analyzer {
 
         filter = new LowerCaseFilter(source);
 
-        // English specific: strips possessives (e.g., "Alzheimer's" -> "Alzheimer")
-        filter = new EnglishPossessiveFilter(filter);
+        if (Boolean.TRUE.equals(config.getBool("englishPossessiveFilter")))
+            filter = new EnglishPossessiveFilter(filter);
 
         if (Boolean.TRUE.equals(config.getBool("repeatedLetterFilter")))
             filter = new RepeatedLetterFilter(filter);
@@ -209,14 +212,14 @@ public class EnglishAnalyzer extends Analyzer {
         if (Boolean.TRUE.equals(config.getBool("posOpnNLPFilter")))
             filter = new CompoundPOSTokenFilter(filter, loadPosTaggerModel());
 
-        if (Boolean.TRUE.equals(config.getBool("nGramsFilter")))
-            filter = new ShingleFilter(filter, config.getInt("shingleSize"));
-
         if (minLength != null && maxLength != null)
             filter = new LengthFilter(filter, minLength, maxLength);
 
         if (!StringUtils.isBlank(stopListFilePath))
             filter = new StopFilter(filter, AnalyzerUtil.loadStopList(this.stopListFilePath));
+
+        if (Boolean.TRUE.equals(config.getBool("nGramsFilter")))
+            filter = new ShingleFilter(filter, config.getInt("shingleSize"));
 
         if (Boolean.TRUE.equals(config.getBool("positionFilter")))
             filter = new PositionFilter(filter, config.getInt("positionIncrement"));
@@ -226,6 +229,7 @@ public class EnglishAnalyzer extends Analyzer {
             case PORTER -> filter = new PorterStemFilter(filter);
             case SNOWBALL -> filter = new SnowballFilter(filter, new EnglishStemmer());
             case KSTEM -> filter = new KStemFilter(filter);
+            case ENGLISHMINIMAL -> filter = new EnglishMinimalStemFilter(filter);
             case NLP -> filter = new OpenNLPLemmatizerFilter(filter, loadLemmatizerModel());
             case NONE -> {}
         }

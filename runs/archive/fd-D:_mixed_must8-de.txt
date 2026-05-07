@@ -1,0 +1,5 @@
+162 Q0 3072 0 10.284458 fd-D:_mixed_must8-de
+162 Q0 6210 1 9.568143 fd-D:_mixed_must8-de
+596 Q0 256 0 14.235336 fd-D:_mixed_must8-de
+1120 Q0 7865 0 60.051277 fd-D:_mixed_must8-de
+1120 Q0 8910 1 59.880501 fd-D:_mixed_must8-de
