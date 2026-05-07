@@ -334,13 +334,7 @@ As a diagnostic, we also tried pairing SPECTER2 document embeddings with BGE-M3 
 %           3DS2A's Figure 12). Only add if it shows something the table doesn't.
 % =============================================================================
 
-Combining the winners of each phase above gives the configurations we submit to the official evaluation.
-
-% TODO: expand the opener above; state which runs were submitted and why.
-% Likely candidates (confirm with the team):
-%   1. Lexical only (best lexical config) - cheap baseline
-%   2. Hybrid (lexical + BGE-M3 fusion at alpha=0.70) - main submission
-%   3. Hybrid + MiniLM rerank - if numbers available, primary submission
+Combining the winners of each phase above gives two configurations submitted to the official evaluation. Run~1 is the pure lexical system, included as a reproducible baseline that depends only on the Lucene index and requires no GPU at query time. Run~2 is the primary submission: the same lexical system with BGE-M3 score fusion at $\alpha{=}0.70$, which is the best configuration identified across all experiments on the dev set.
 
 \begin{table}[!ht]
     \caption{Submitted runs and dev-set MRR@5 per language.}
@@ -352,10 +346,8 @@ Combining the winners of each phase above gives the configurations we submit to 
         \midrule
         Run 1 & Lexical only (best lexical config)              & 0.5172 & 0.5145 & 0.3841 & 0.4719 \\
         Run 2 & Hybrid: lexical $+$ BGE-M3 fusion ($\alpha{=}0.70$) & 0.5768 & 0.5770 & 0.4331 & 0.5290 \\
-        % Run 3 & Hybrid $+$ MiniLM rerank ($\alpha_{\text{rerank}}{=}0.6$) & ? & ? & ? & ? \\  % TODO if applicable
         \bottomrule
     \end{tabular}
 \end{table}
 
-% TODO: short closing paragraph: which run is the primary submission and why,
-% any caveats on test-set extrapolation, transition into the conclusion.
+Run~2 gains 5.7 points of average MRR@5 over Run~1 on the dev set. The improvement is consistent across all three languages: $+6.0$ points on EN, $+6.2$ on FR, and $+4.9$ on DE, so no language is disproportionately favoured or penalised by the fusion. All hyperparameters — field boosts, $k_1$, $b$, $\alpha$, and topK — were tuned exclusively on the dev split, so the test-set scores will be the first out-of-sample measurement. We report both runs so that the lexical contribution and the embedding gain can be read separately in the official results.
