@@ -28,6 +28,73 @@ The repository is organised as follows:
 * `homework-2`: this folder contains the final paper submitted to CLEF.
 * `slides`: this folder contains the slides used for presenting the conducted project.
 
+## Quickstart — lexical search on English dev
+
+No Python servers or GPU required. You need Java 21+ and Maven.
+
+### 1. Download the data
+
+```bash
+pip install huggingface_hub
+python3 - <<'EOF'
+from huggingface_hub import hf_hub_download
+import shutil, os
+
+repo = "sschellhammer/CT26_Task1_SourceRetrievalForScientificWebClaims"
+for f in ["collection_data.json", "en_dev.json"]:
+    src = hf_hub_download(repo_id=repo, filename=f, repo_type="dataset")
+    os.makedirs("datasets", exist_ok=True)
+    shutil.copy(src, f"datasets/{f}")
+EOF
+```
+
+### 2. Configure
+
+Edit `code/src/main/config/config.yml` — change only these lines:
+
+```yaml
+collectionPath: datasets/collection_data.json
+topics: datasets/en_dev.json
+searchMode: lexical
+enableQueryExpansion: false
+runID: nexa-en-dev-quickstart
+```
+
+### 3. Build
+
+```bash
+cd code && mvn package -DskipTests && cd ..
+```
+
+### 4. Index
+
+```bash
+java -cp code/target/nexa-0.1-jar-with-dependencies.jar \
+  it.unipd.dei.se.nexa.indexer.DirectoryIndexer
+```
+
+### 5. Search
+
+```bash
+java --add-modules jdk.incubator.vector \
+  -cp code/target/nexa-0.1-jar-with-dependencies.jar \
+  it.unipd.dei.se.nexa.searcher.Searcher
+```
+
+The run file is written to `runs/nexa-en-dev-quickstart.txt`.
+
+### 6. Evaluate
+
+```bash
+python3 code/scripts/eval_run.py \
+  runs/nexa-en-dev-quickstart.txt \
+  --claims datasets/en_dev.json
+```
+
+Expected MRR@5: ~0.517.
+
+---
+
 ## Python servers
 
 The pipeline relies on up to four local Python servers. All servers share a
