@@ -1,13 +1,12 @@
 package it.unipd.dei.se.nexa.indexer;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unipd.dei.se.nexa.analyzer.EnglishAnalyzer;
 import it.unipd.dei.se.nexa.analyzer.FrenchAnalyzer;
 import it.unipd.dei.se.nexa.analyzer.GermanAnalyzer;
 import it.unipd.dei.se.nexa.parser.JsonParser;
 import it.unipd.dei.se.nexa.parser.Publication;
 import it.unipd.dei.se.nexa.utility.ConfigManager;
+import it.unipd.dei.se.nexa.utility.EmbeddingService;
 import it.unipd.dei.se.nexa.utility.LanguageDetectionUtil;
 import it.unipd.dei.se.nexa.utility.TranslationUtil;
 import org.apache.lucene.analysis.Analyzer;
@@ -20,13 +19,8 @@ import org.apache.lucene.store.FSDirectory;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.*;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -58,6 +52,12 @@ public class DirectoryIndexer {
         final String translationTargetLanguage = TranslationUtil.getTranslationTargetLanguage();
         final boolean embeddingsEnabled = Boolean.TRUE.equals(config.getBool("embeddingsEnabled"));
         final String embeddingsServiceUrl = config.getString("embeddingsServiceUrl");
+        final EmbeddingService embeddingService = embeddingsEnabled ? new EmbeddingService(embeddingsServiceUrl) : null;
+
+        if (translateNonEnglishToEnglish) {
+            System.out.println("[WARNING] Translation is enabled — make sure the translation server is running first:");
+            System.out.println("          bash code/scripts/run_translategemma_server.sh");
+        }
 
         System.out.println("Starting the indexing" + docsDir.toAbsolutePath());
         System.out.println("Translate non-English publications to " + translationTargetLanguage + ": "
@@ -74,38 +74,39 @@ public class DirectoryIndexer {
                     JsonParser parser = new JsonParser(reader);
 
                     for (Publication pub : parser) {
-                        if (isIndexablePublication(pub)) {
-                            final String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
-                            String indexingLanguage = resolveIndexingLanguage(detectedLanguage);
-                            Publication publicationToIndex = pub;
 
-                            if (translateNonEnglishToEnglish
-                                    && shouldTranslateToTargetLanguage(indexingLanguage, translationTargetLanguage)) {
-                                publicationToIndex = TranslationUtil.translatePublication(
-                                        pub,
-                                        indexingLanguage,
-                                        translationTargetLanguage);
+                        if (isIndexablePublication(pub)) {
+                            // Detect language
+                            final String detectedLanguage = LanguageDetectionUtil.detectPublicationLanguage(pub);
+                            String originalLanguage = resolveIndexingLanguage(detectedLanguage);
+
+                            Publication publicationToIndex = pub;
+                            String indexingLanguage = originalLanguage;
+
+                            // Translate
+                            if (translateNonEnglishToEnglish && shouldTranslateToTargetLanguage(originalLanguage, translationTargetLanguage)) {
+                                publicationToIndex = TranslationUtil.translatePublication(pub, originalLanguage, translationTargetLanguage);
                                 indexingLanguage = translationTargetLanguage;
                             }
 
-                            if (embeddingsEnabled) {
+                            if (embeddingService != null) {
                                 try {
-                                    String textToVectorize = safeString(publicationToIndex.getTitle()) + " "
-                                            + safeString(publicationToIndex.getAbstract());
-
-                                    float[] vector = getVector(textToVectorize, embeddingsServiceUrl);
-                                    publicationToIndex.setEmbedding(vector);
-
+                                    String textToVectorize = safeString(publicationToIndex.getTitle()) + " " + safeString(publicationToIndex.getAbstract());
+                                    publicationToIndex.setEmbedding(embeddingService.getEmbedding(textToVectorize));
                                 } catch (Exception e) {
-                                    System.err.println("Errore vettorizzazione per id: "
-                                            + publicationToIndex.getPubkey() + ": " + e.getMessage());
+                                    System.err.println("Embedding failed for pubkey " + publicationToIndex.getPubkey() + ": " + e.getMessage());
                                 }
                             }
 
                             writer.addDocument(publicationToIndex.toLuceneDocument(indexingLanguage));
-                            System.out.println("Indexed document: " + count + " with id: " + publicationToIndex.getPubkey()
-                                    + " [" + indexingLanguage + "]");
+
                             count++;
+                            if (count % 100 == 0) {
+                                long elapsed = System.currentTimeMillis() - start;
+                                long s = elapsed / 1000;
+                                System.out.printf("Indexed documents: %d  [%02d:%02d elapsed, %.1f docs/s]%n",
+                                        count, s / 60, s % 60, count * 1000.0 / elapsed);
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -119,36 +120,6 @@ public class DirectoryIndexer {
 
         long end = System.currentTimeMillis();
         System.out.printf("\nIndexing complete. %d documents in target in %d ms.%n", count, (end - start));
-    }
-
-    private float[] getVector(String text, String serviceUrl) throws Exception {
-
-        HttpClient client = HttpClient.newHttpClient();
-        ObjectMapper mapper = new ObjectMapper();
-
-        Map<String, Object> payload = Map.of("texts", List.of(text));
-        String jsonBody = mapper.writeValueAsString(payload);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serviceUrl))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("Errore dal server BERT: " + response.body());
-        }
-
-        JsonNode root = mapper.readTree(response.body());
-        JsonNode vectorNode = root.path("embeddings").get(0);
-
-        float[] vector = new float[vectorNode.size()];
-        for (int i = 0; i < vectorNode.size(); i++) {
-            vector[i] = (float) vectorNode.get(i).asDouble();
-        }
-        return vector;
     }
 
     private static Analyzer buildLanguageAwareAnalyzer() {

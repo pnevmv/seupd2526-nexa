@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+sentence-transformers
+easynmt
+fasttext-wheel
+torch
+transformers

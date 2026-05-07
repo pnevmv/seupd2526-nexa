@@ -2,8 +2,8 @@
 
 # --- indexing ---
 
-collectionPath: code/datasets/collection_data.json
-indexPath: "code/experiment/index"
+collectionPath: datasets/processed/documents/collection_data.json
+indexPath: "experiment/index"
 
 # resolved relative to repo root or code/
 languageDetectorModel: src/main/resources/langdetect-183.bin
@@ -26,18 +26,39 @@ translationTargetLanguage: en
 translationCommand:
 
 # used when provider=gemma
-translationServiceUrl: http://127.0.0.1:8008/translate
+translationServiceUrl: http://127.0.0.1:8080/translate
+
+# --- query expansion ---
+
+enableQueryExpansion: true
+queryExpansionServiceUrl: http://127.0.0.1:8001/expand
+
+# LLM query expansion configurations (used by SearcherUtil)
+useLLMExpansion: false
+llmModel: "llama-3.1-8b-instant"
+llmServiceUrl: "https://api.groq.com/openai/v1/chat/completions"
+openApiKey: "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"
+numOfTokenFromLLM: 10
+
+# Synonyms expansion
+synonyms: false
+synonymsFile: src/main/resources/synonyms.txt
 
 # --- searching ---
 
+# searchMode: lexical (BM25 only), semantic (Vector only), hybrid (BM25 + Vector)
+searchMode: lexical
+
 # claims JSON: array of {index, text, pubkey?}
-topics: code/datasets/en_train.json
+# active preprocessed topics. Use the expanded path after running expand_claims.py.
+topics: datasets/processed/queries/translated/fr_train_en_translated.json
+expandedTopics: datasets/processed/queries/expanded/fr_train_en_translated_expanded.json
 
 # runID doubles as the output filename
-runID: nexa-baseline
+runID: nexa-fr-train-translated-expanded
 runPath: runs
 
-maxDocsRetrieved: 1000
+maxDocsRetrieved: 50
 
 # --- reserved ---
 # leftovers from the LongEval pipeline. kept as placeholders so we know the
@@ -56,7 +77,25 @@ maxDocsRetrieved: 1000
 # prf: false
 # numOfDocsToRetrieveForPrf: 5
 # numOfTokenFromPrf: 4
-# reRank: false
-# reRankEndPoint: Local
-# reRankHeuristic: false
+# reRank: true
+# reRankServiceUrl: http://127.0.0.1:8080/rerank
 # numOfDocsToRerank: 100
+
+# --- hybrid search weights ---
+#lexical trust, if the alpha value is higher more lexical trust is done, if it is lower semantical trust
+rrfAlpha: 0.6
+#keep 60, proved to be the best value
+rrfK: 60
+
+# --- lexical query weights ---
+#phraseBoost: 1.5
+#fuzzyBoost: 0.3
+#titleBoost: 2.0
+#abstractBoost: 1.0
+
+# --- custom additions ---
+rrfAlphaShortQuery: 0.8
+rrfAlphaLongQuery: 0.2
+rerankAlpha: 0.6
+bm25_k1: 1.2
+bm25_b: 0.75

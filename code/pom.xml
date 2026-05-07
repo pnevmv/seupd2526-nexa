@@ -17,6 +17,39 @@
 		<url>https://www.unipd.it/en/</url>
 	</organization>
 
+	<developers>
+		<developer>
+			<name>Paul Arlot</name>
+			<email>paullouisjean.arlot@studenti.unipd.it</email>
+			<organization>University of Padua, Italy</organization>
+		</developer>
+		<developer>
+			<name>Andrea Di Tillo</name>
+			<email>andrea.ditillo@studenti.unipd.it</email>
+			<organization>University of Padua, Italy</organization>
+		</developer>
+		<developer>
+			<name>Gaute Greiff Flagstad</name>
+			<email>gautegreiff.flaegstad@studenti.unipd.it</email>
+			<organization>University of Padua, Italy</organization>
+		</developer>
+		<developer>
+			<name>Bita Khashechian</name>
+			<email>bita.khashechian@studenti.unipd.it</email>
+			<organization>University of Padua, Italy</organization>
+		</developer>
+		<developer>
+			<name>Danil Smirnov</name>
+			<email>danil.smirnov@studenti.unipd.it</email>
+			<organization>University of Padua, Italy</organization>
+		</developer>
+		<developer>
+			<name>Marco Tomaiuoli</name>
+			<email>marco.tomaiuoli@studenti.unipd.it</email>
+			<organization>University of Padua, Italy</organization>
+		</developer>
+	</developers>
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>21</java.version>

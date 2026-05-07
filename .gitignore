@@ -74,10 +74,15 @@ tomcat-logs/
 datasets/
 
 # Index
-/index/
+experiment/
+index/
 
 # OSX
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
 
 code/experiment/
 experiment/
@@ -90,3 +95,11 @@ dependency-reduced-pom.xml
 
 # TREC run outputs (regenerable, can be hundreds of MB)
 runs/
+
+# Query expansion cache
+code/scripts/queryExpansion/queryexpansion_cache.json
+
+.venv/
+
+# Temporary index directories
+tmp-index-check/
