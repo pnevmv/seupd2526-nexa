@@ -4,9 +4,40 @@ In this section, we describe the architecture and components of our system. Our 
 
 \subsection{System Configurability}
 
-\subsection{Document Parsing}
+\subsection{Data Parsing}
 
-\subsection{Query Parsing}
+The first stage of the pipeline turns the two textual inputs of the system, the corpus of scientific publications and the set of input claims, into structured Java objects that the rest of the pipeline can work with. Both inputs are provided as JSON and share the same text cleaning routine, so we describe them together. On the data side we have two simple classes: \texttt{Publication} for documents and \texttt{Claim} for queries.
+
+\subsubsection{Documents (Publications)}
+
+Documents are read through an abstract \texttt{CommonParser} class that defines the iterator interface and exposes the shared text cleaning routine, with concrete subclasses for each input format. Since the corpus is provided as JSON, the only subclass we currently use is \texttt{JsonParser}.
+
+\texttt{CommonParser} implements \texttt{Iterator<Publication>}, so it produces one \texttt{Publication} at a time as the input is read. Each \texttt{Publication} gets the fields we use for retrieval: a numerical identifier (\texttt{pubkey}), the \texttt{title}, \texttt{abstract}, \texttt{venue} and \texttt{authors}. Missing or \texttt{null} fields are replaced with empty defaults, and empty abstracts are filled with a placeholder token so that every document still produces a valid entry in the index.
+
+\texttt{JsonParser} uses the Jackson library to read the corpus, which is stored as a JSON array of document objects. We process the stream incrementally rather than loading the whole file at once, which keeps memory usage flat regardless of corpus size. For each publication we map the JSON fields onto a \texttt{Publication} instance and run the abstract through the cleaning routine before it leaves the parser.
+
+\subsubsection{Queries (Claims)}
+
+Queries are loaded from a separate JSON topics file containing a list of claim objects. The file is small and only read once at the start of a run, so we parse it into a \texttt{List<Claim>} using a Jackson \texttt{ObjectMapper}, rather than going through the streaming parser used for documents. Each \texttt{Claim} keeps all three fields: the claim \texttt{index} (used as the query identifier in the TREC run file), the claim \texttt{text}, and the gold \texttt{pubkey} when present (used only at evaluation time).
+
+To keep documents and queries aligned, the cleaning routine described next is applied to the claim text from inside the setter of the \texttt{Claim} class. By the time the searcher iterates over the list, both sides of the retrieval problem have gone through exactly the same preprocessing, which avoids the kind of subtle mismatches that arise when documents and queries are normalised differently.
+
+\subsubsection{Text Cleaning}
+
+Before any text reaches the analyzer, we pass it through a cleaning function (\texttt{cleanText}) that strips out the noise produced by the mix of scientific writing and social media content in the corpus. The function applies the following steps in order:
+
+\begin{itemize}
+    \item \textbf{Unicode normalisation:} the text is converted to NFC form so the character representation is consistent.
+    \item \textbf{HTML unescaping and stripping:} HTML entities are decoded and any leftover tags are removed.
+    \item \textbf{URL removal:} hyperlinks are dropped so they do not end up as tokens.
+    \item \textbf{Citation removal:} bracketed references (e.g.\ ``[1, 2--5]'') and author--year citations (e.g.\ ``(Rossi et al., 2023)'') are removed.
+    \item \textbf{Section header removal:} structural labels that appear in scientific abstracts, such as \textit{Abstract}, \textit{Methods}, \textit{Results} or \textit{Conclusions}, are stripped.
+    \item \textbf{Symbol and emoji removal:} mathematical and scientific symbols (e.g.\ \textdegree, $\pm$, $\geq$) and emoji characters are replaced with spaces.
+    \item \textbf{Social media artefacts:} Twitter-style mentions (e.g.\ \texttt{@user}) are removed.
+    \item \textbf{Whitespace collapsing:} runs of whitespace are collapsed into a single space and any leading or trailing whitespace is trimmed.
+\end{itemize}
+
+This step is important because the corpus mixes formal abstracts with informal claims. Without it the analyzer would have to deal with a lot of noisy tokens that could decrease matching quality.
 
 \subsection{Query Expansion}
 
