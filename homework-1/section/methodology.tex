@@ -3,8 +3,6 @@
 
 In this section, we describe the architecture and components of our system. Our approach follows a multi-stage Information Retrieval pipeline combining traditional lexical matching with semantic representations.
 
-\subsection{System Configurability}
-
 \subsection{Data Parsing}
 
 The first stage of the pipeline turns the two textual inputs of the system, the corpus of scientific publications and the set of input claims, into structured Java objects that the rest of the pipeline can work with. Both inputs are provided as JSON and share the same text cleaning routine, so we describe them together. On the data side we have two simple classes: \texttt{Publication} for documents and \texttt{Claim} for queries.
