@@ -314,3 +314,39 @@ Table~\ref{tab:test-results} reports the official test-set scores for Run~2.
 \end{table}
 
 The test-set average of 0.5435 is 1.5 points above the dev-set result of 0.5290, indicating that the system generalises well and that there was no overfitting to the dev split during tuning. The per-language picture is mixed: EN and FR drop slightly from dev to test ($-0.7$ and $-0.3$ points respectively), while DE improves substantially ($+5.4$ points). The DE gain is consistent with the dev set being a harder sample for German — its dev-set scores were lower throughout the tuning phase — so the test distribution appears somewhat more favourable for DE\@. Overall, the hybrid system transfers reliably across the held-out partition, and the dense fusion gain over a pure lexical run is confirmed on unseen data.
+
+\subsubsection*{Dev-set breakdown analysis}
+
+To understand where the MRR@5 gains come from, Table~\ref{tab:dev-breakdown} decomposes the dev-set scores into hit rates and the fraction of queries for which no relevant document appeared in the top 100 (missing). All three system configurations are included — the fine-tuned cross-encoder from Section~\ref{subsubsec:res-ce} is shown for completeness even though it was not submitted.
+
+\begin{table}[!ht]
+    \caption{Dev-set retrieval breakdown for all three system configurations. Hit@1 and Hit@5 are cumulative (percentage of queries with the correct document ranked $\leq\!1$ and $\leq\!5$, respectively); Missing is the fraction of queries where the correct document does not appear in the top 100.}
+    \label{tab:dev-breakdown}
+    \centering
+    \begin{tabular}{llcccc}
+        \toprule
+        System & Lang & MRR@5 & Hit@1 (\%) & Hit@5 (\%) & Missing (\%) \\
+        \midrule
+        Lexical (BM25)              & EN & 0.5172 & 46.6 & 59.5 & 26.1 \\
+                                    & FR & 0.5145 & 44.9 & 61.0 & 24.5 \\
+                                    & DE & 0.3841 & 32.9 & 48.2 & 35.2 \\
+        \midrule
+        Hybrid ($\alpha{=}0.70$)    & EN & 0.5875 & 53.0 & 67.7 & 14.6 \\
+                                    & FR & 0.5990 & 53.7 & 69.5 & 14.0 \\
+                                    & DE & 0.4615 & 40.2 & 55.4 & 19.4 \\
+        \midrule
+        Cross-encoder (not submitted) & EN & 0.5606 & 49.5 & 66.9 & 23.3 \\
+                                      & FR & 0.6206 & 56.7 & 70.8 & 22.8 \\
+                                      & DE & 0.4783 & 42.2 & 57.0 & 37.0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\paragraph{Hybrid gains come from recall, not re-ranking.}
+The lexical system fails to return any relevant document in the top 100 for roughly one query in four on EN and FR, and one in three on DE\@. The hybrid halves these missing rates to 14--19\%, while simultaneously improving Hit@1 by 6--8 percentage points per language. Together these two effects account for the full $+7$ to $+8.5$\,pt MRR@5 gain: the dense signal both surfaces relevant documents that BM25 misses entirely, and promotes them to higher ranks when BM25 does find them.
+
+\paragraph{Cross-encoder: precision up, recall down, asymmetric across languages.}
+The CE reranks only the top-50 hybrid candidates, so every document at hybrid ranks 51--100 is effectively discarded, raising the missing rate relative to hybrid by $+8.6$ pp for EN, $+8.8$ pp for FR, and $+17.6$ pp for DE\@. Despite this recall penalty the CE is net-positive for FR ($+2.2$ pts MRR@5) and DE ($+1.7$ pts), because it successfully promotes more queries to rank 1 in those languages ($+3.0$ pp and $+2.1$ pp Hit@1). The opposite holds for EN: the CE demotes 138 queries from rank~1 to lower positions, producing a $-2.7$\,pt MRR@5 drop, which is the primary reason the fine-tuned reranker was excluded from the primary submission.
+
+\paragraph{German is structurally the hardest language.}
+DE lags EN and FR by 13--14 MRR@5 points across all three configurations. Its lexical missing rate (35.2\%) exceeds those of EN and FR by roughly ten percentage points, and the CE restores it almost to that level (37.0\%), suggesting that the hybrid's recall improvement is fragile for DE once the candidate list is truncated at 50. The hybrid is the configuration that helps DE the most in absolute terms ($-15.8$ pp missing), consistent with multilingual BGE-M3 providing stronger cross-lingual bridging than the lexical index can achieve alone.
