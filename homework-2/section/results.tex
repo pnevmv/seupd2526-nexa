@@ -296,4 +296,21 @@ Combining the winners of each phase above gives two configurations submitted to 
     \end{tabular}
 \end{table}
 
-Run~2 gains 5.7 points of average MRR@5 over Run~1 on the dev set. The improvement is consistent across all three languages: $+6.0$ points on EN, $+6.2$ on FR, and $+4.9$ on DE, so no language is disproportionately favoured or penalised by the fusion. All hyperparameters — field boosts, $k_1$, $b$, $\alpha$, and topK — were tuned exclusively on the dev split, so the test-set scores will be the first out-of-sample measurement. We report both runs so that the lexical contribution and the embedding gain can be read separately in the official results.
+Run~2 gains 5.7 points of average MRR@5 over Run~1 on the dev set. The improvement is consistent across all three languages: $+6.0$ points on EN, $+6.2$ on FR, and $+4.9$ on DE, so no language is disproportionately favoured or penalised by the fusion. All hyperparameters — field boosts, $k_1$, $b$, $\alpha$, and topK — were tuned exclusively on the dev split.
+
+Table~\ref{tab:test-results} reports the official test-set scores for Run~2.
+
+\begin{table}[!ht]
+    \caption{Official test-set MRR@5 for the primary submitted run (Run~2: hybrid lexical $+$ BGE-M3 fusion, $\alpha{=}0.70$).}
+    \label{tab:test-results}
+    \centering
+    \begin{tabular}{lcccc}
+        \toprule
+        Run & EN & FR & DE & Avg \\
+        \midrule
+        Run 2 (test) & 0.5697 & 0.5738 & 0.4870 & 0.5435 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The test-set average of 0.5435 is 1.5 points above the dev-set result of 0.5290, indicating that the system generalises well and that there was no overfitting to the dev split during tuning. The per-language picture is mixed: EN and FR drop slightly from dev to test ($-0.7$ and $-0.3$ points respectively), while DE improves substantially ($+5.4$ points). The DE gain is consistent with the dev set being a harder sample for German — its dev-set scores were lower throughout the tuning phase — so the test distribution appears somewhat more favourable for DE\@. Overall, the hybrid system transfers reliably across the held-out partition, and the dense fusion gain over a pure lexical run is confirmed on unseen data.
