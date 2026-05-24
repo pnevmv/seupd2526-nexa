@@ -280,7 +280,7 @@ Fine-tuning improves French by 2.2 points and German by 1.7 points but degrades 
 \subsection{Final Submitted Runs}
 \label{subsec:res-final}
 
-Combining the winners of each phase above gives two configurations submitted to the official evaluation. Run~1 is the pure lexical system, included as a reproducible baseline that depends only on the Lucene index and requires no GPU at query time. Run~2 is the primary submission: the same lexical system with BGE-M3 score fusion at $\alpha{=}0.70$, which is the best configuration identified across all experiments on the dev set.
+Combining the winners of each phase gives the two configurations we submitted to the official evaluation. Run~1 is the pure lexical system, included as a reproducible baseline that depends only on the Lucene index and requires no GPU at query time. Run~2 is the primary submission: the same lexical system with BGE-M3 score fusion at $\alpha{=}0.70$, which was the best configuration identified on the dev set.
 
 \begin{table}[!ht]
     \caption{Submitted runs and dev-set MRR@5 per language.}
@@ -296,7 +296,7 @@ Combining the winners of each phase above gives two configurations submitted to 
     \end{tabular}
 \end{table}
 
-Run~2 gains 5.7 points of average MRR@5 over Run~1 on the dev set. The improvement is consistent across all three languages: $+6.0$ points on EN, $+6.2$ on FR, and $+4.9$ on DE, so no language is disproportionately favoured or penalised by the fusion. All hyperparameters — field boosts, $k_1$, $b$, $\alpha$, and topK — were tuned exclusively on the dev split.
+Run~2 gains 5.7 points of average MRR@5 over Run~1 on the dev set. The improvement is consistent across all three languages: $+6.0$ points on EN, $+6.2$ on FR, and $+4.9$ on DE, so no single language is disproportionately favoured or penalised by the fusion. All hyperparameters (field boosts, $k_1$, $b$, $\alpha$, and topK) were tuned only on the dev split.
 
 Table~\ref{tab:test-results} reports the official test-set scores for Run~2.
 
@@ -313,11 +313,11 @@ Table~\ref{tab:test-results} reports the official test-set scores for Run~2.
     \end{tabular}
 \end{table}
 
-The test-set average of 0.5435 is 1.5 points above the dev-set result of 0.5290, indicating that the system generalises well and that there was no overfitting to the dev split during tuning. The per-language picture is mixed: EN and FR drop slightly from dev to test ($-0.7$ and $-0.3$ points respectively), while DE improves substantially ($+5.4$ points). The DE gain is consistent with the dev set being a harder sample for German — its dev-set scores were lower throughout the tuning phase — so the test distribution appears somewhat more favourable for DE\@. Overall, the hybrid system transfers reliably across the held-out partition, and the dense fusion gain over a pure lexical run is confirmed on unseen data.
+The test-set average of 0.5435 is 1.5 points above the dev-set result of 0.5290, indicating that the system did not overfit to the dev split. Per-language results are mixed: EN and FR drop slightly from dev to test ($-0.7$ and $-0.3$ points respectively), while DE improves by a substantial 5.4 points. The DE gain is consistent with the dev set being a harder sample for German. Its dev-set scores were lower throughout the tuning phase, so the test distribution appears somewhat more favourable for DE\@. Overall, the hybrid system transfers reliably across the unseen data, and the dense fusion gain over a pure lexical run is confirmed on unseen data.
 
 \subsubsection*{Dev-set breakdown analysis}
 
-To understand where the MRR@5 gains come from, Table~\ref{tab:dev-breakdown} decomposes the dev-set scores into hit rates and the fraction of queries for which no relevant document appeared in the top 100 (missing). All three system configurations are included — the fine-tuned cross-encoder from Section~\ref{subsubsec:res-ce} is shown for completeness even though it was not submitted.
+To see where the MRR@5 gains come from, Table~\ref{tab:dev-breakdown} breaks the dev-set scores into hit rates and the fraction of queries for which no relevant document appeared in the top 100 (missing). All three system configurations are shown for comparison, including the fine-tuned cross-encoder from Section~\ref{subsubsec:res-ce} (even though it was not submitted).
 
 \begin{table}[!ht]
     \caption{Dev-set retrieval breakdown for all three system configurations. Hit@1 and Hit@5 are cumulative (percentage of queries with the correct document ranked $\leq\!1$ and $\leq\!5$, respectively); Missing is the fraction of queries where the correct document does not appear in the top 100.}
@@ -343,13 +343,13 @@ To understand where the MRR@5 gains come from, Table~\ref{tab:dev-breakdown} dec
 \end{table}
 
 \paragraph{Hybrid gains come from recall, not re-ranking.}
-The lexical system fails to return any relevant document in the top 100 for roughly one query in four on EN and FR, and one in three on DE\@. The hybrid halves these missing rates to 14--19\%, while simultaneously improving Hit@1 by 6--8 percentage points per language. Together these two effects account for the full $+7$ to $+8.5$\,pt MRR@5 gain: the dense signal both surfaces relevant documents that BM25 misses entirely, and promotes them to higher ranks when BM25 does find them.
+The lexical system misses any relevant document in the top 100 for about one in four queries on EN and FR, and one in three on DE\@. The hybrid cuts these missing rates to 14--19\%, while also improving Hit@1 by 6--8 percentage points per language. Together these two effects explain the $+7$ to $+8.5$\,pt MRR@5 gain: the dense signal finds documents BM25 misses entirely, and ranks them higher when BM25 does find them.
 
 \paragraph{Cross-encoder: precision up, recall down, asymmetric across languages.}
-The CE reranks only the top-50 hybrid candidates, so every document at hybrid ranks 51--100 is effectively discarded, raising the missing rate relative to hybrid by $+8.6$ pp for EN, $+8.8$ pp for FR, and $+17.6$ pp for DE\@. Despite this recall penalty the CE is net-positive for FR ($+2.2$ pts MRR@5) and DE ($+1.7$ pts), because it successfully promotes more queries to rank 1 in those languages ($+3.0$ pp and $+2.1$ pp Hit@1). The opposite holds for EN: the CE demotes 138 queries from rank~1 to lower positions, producing a $-2.7$\,pt MRR@5 drop, which is the primary reason the fine-tuned reranker was excluded from the primary submission.
+The CE only reranks the top-50 hybrid candidates, so any document at hybrid ranks 51--100 is effectively discarded. This raises the missing rate by $+8.6$ pp for EN, $+8.8$ pp for FR, and $+17.6$ pp for DE\@. Despite this recall hit, the CE still comes out ahead on FR ($+2.2$ pts MRR@5) and DE ($+1.7$ pts), because it promotes more queries to rank 1 in those languages ($+3.0$ pp and $+2.1$ pp Hit@1). For EN it is the opposite: the CE pushes 138 queries down from rank~1, costing $-2.7$\,pt MRR@5, which is the primary reason we did not submit the fine-tuned reranker.
 
-\paragraph{German is structurally the hardest language.}
-DE lags EN and FR by 13--14 MRR@5 points across all three configurations. Its lexical missing rate (35.2\%) exceeds those of EN and FR by roughly ten percentage points, and the CE restores it almost to that level (37.0\%), suggesting that the hybrid's recall improvement is fragile for DE once the candidate list is truncated at 50. The hybrid is the configuration that helps DE the most in absolute terms ($-15.8$ pp missing), consistent with multilingual BGE-M3 providing stronger cross-lingual bridging than the lexical index can achieve alone.
+\paragraph{German is the hardest language.}
+DE trails EN and FR by 13--14 MRR@5 points in every configuration. Its lexical missing rate (35.2\%) is about ten percentage points worse than EN and FR, and the CE pushes it back almost to that level (37.0\%), suggesting that the hybrid's recall gain on DE is fragile once the candidate list is cut to 50. The hybrid is the configuration that helps DE the most in absolute terms ($-15.8$ pp missing), which fits with multilingual BGE-M3 doing a better job at cross-lingual matching than the lexical index can achieve alone.
 
 \subsection{Statistical Analysis}
 \label{subsec:res-stats}
