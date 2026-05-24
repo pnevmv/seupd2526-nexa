@@ -169,7 +169,7 @@ Both strategies are disabled in all later experiments. The vocabulary gap they w
 \subsection{Ablation of the Lexical System}
 \label{subsec:res-ablation}
 
-To isolate the contribution of each lexical component, we ablate them one at a time on top of the full best configuration locked in across Sections~\ref{subsec:res-analyzer} to~\ref{subsec:res-fielded}. Table~\ref{tab:ablation} reports each ablation as a one-component change against that reference, plus a row that removes all three tunable components together, a row that adds the venue boost on top, and two rows that replace SHOULD with stricter Boolean modes. All runs share a single index, so differences come only from the component being changed.
+To isolate the contribution of each lexical component, we ablate them one at a time on top of the full best configuration locked in across Sections~\ref{subsec:res-analyzer} to~\ref{subsec:res-fielded}. Table~\ref{tab:ablation} reports each ablation as a one-component change against that reference, plus a row that removes all three tunable components together, a row that adds the venue boost on top, and two rows that replace OR with stricter Boolean modes. All runs share a single index, so differences come only from the component being changed.
 
 \begin{table}[!ht]
     \caption{Ablation of the lexical system, MRR@5. The reference is the full configuration (BM25 $k_1{=}1.0$, $b{=}0.75$, field boosts title 2, abstract 3, authors 1.5, topK${=}30$). Each row removes or changes exactly one component.}
