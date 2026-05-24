@@ -44,7 +44,7 @@ To merge the vocabulary between informal social media claims and formal scientif
 
 \subsubsection{Static Dictionary Expansion}
 
-The simplest strategy is to use tested dictionaries for all the three languages, loaded from the file referenced by the \texttt{synonymsFile} parameter. During query construction (\texttt{buildLexicalQuery}), each token of the claim is looked up in the dictionary, and any matching synonyms (for example, ``car'' $\rightarrow$ ``automobile'', ``vehicle'') are added to the abstract subquery with a boost of \texttt{0.5f}, half the weight of the original term. This keeps the original tokens dominant in the ranking while still letting the expansion contribute.
+The simplest strategy is to use tested dictionaries for all the three languages, loaded from the file referenced by the \texttt{synonymsFile} parameter. During query construction (\texttt{buildLexicalQuery}), each token of the claim is looked up in the dictionary, and any matching synonyms (for example, ``car'' $\rightarrow$ ``automobile'', ``vehicle'') are added to the abstract subquery with a boost of \texttt{0.5f}, half the weight of the original term. This keeps the original tokens dominant in the ranking while still letting the expansion contribute. Retrieved from: "https://www.openthesaurus.de".
 \subsubsection{LLM-based Expansion}
 
 To capture relations beyond a fixed dictionary, the system can expand the query using a Large Language Model. The claim text is sent to the Groq API with the configured \texttt{openApiKey} and \texttt{llmModel} (currently \texttt{llama-3.1-8b-instant}). The model returns a short list of related terms, for example ``CO\textsubscript{2}'', ``pollution'' and ``glaciers'' for ``climate change''. These terms are added to the title and abstract subqueries with a boost of \texttt{0.4f}.
@@ -89,7 +89,7 @@ The overall pipeline is dynamically configured through external YAML configurati
 Multiple tokenization strategies are supported, enabling the system to handle different types of input text:
 
 \begin{itemize}
-    \item \textbf{Standard Tokenizer:} Uses Luceneâ€™s rule-based tokenizer to handle punctuation, digits, and word boundaries.
+    \item \textbf{Standard Tokenizer:} Uses LuceneÕs rule-based tokenizer to handle punctuation, digits, and word boundaries.
     \item \textbf{Letter Tokenizer:} Emits tokens composed only of alphabetic characters, treating non-letter characters as delimiters.
     \item \textbf{Whitespace Tokenizer:} Splits input strictly on whitespace characters without processing punctuation.
     \item \textbf{NLP Tokenizer:} Uses Apache OpenNLP models to perform linguistically informed tokenization.
@@ -121,7 +121,7 @@ To improve semantic representation, additional filters are applied:
 \begin{itemize}
     \item \textbf{AbbreviationExpansionFilter:} Expands abbreviations using predefined mappings (e.g., ``ml'' $\rightarrow$ ``machine learning'').
     \item \textbf{CompoundPOSTokenFilter:} Uses Part-of-Speech tagging to combine semantically related tokens into compound expressions.
-    \item \textbf{ShingleFilter:} Generates n-grams to capture local contextual information.
+    \item \textbf{ShingleFilter:} Generates words with n-grams to capture local contextual information.
     \item \textbf{PositionFilter:} Normalizes positional increments for indexing consistency.
 \end{itemize}
 
@@ -196,7 +196,7 @@ The resulting terms are used to construct field-specific queries targeting diffe
 
 Instead of relying on a single-field representation, the system generates separate subqueries for the title and abstract fields of each document.
 
-These subqueries are combined using a Boolean query with \texttt{SHOULD} clauses, allowing documents to be retrieved if they match either field. This formulation increases recall while maintaining flexibility in matching.
+These subqueries are combined using a Boolean query with \texttt{ON} clauses, allowing documents to be retrieved if they match either field. This formulation increases recall while maintaining flexibility in matching.
 
 To further refine the ranking, different importance weights are assigned to each field through boosting. In particular, matches occurring in the abstract field are given higher importance than those in the title, since social media claims typically paraphrase scientific findings rather than paper titles. This results in a weighted query structure that prioritizes the abstract as the primary evidence field while still drawing a smaller signal from the title.
 
