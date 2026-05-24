@@ -75,7 +75,7 @@ We then swept $k_1 \in \{0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0\}$ against $b \in \{0
 \subsection{Fielded Search and Query Construction}
 \label{subsec:res-fielded}
 
-We now tune how the query is assembled: which fields to boost, whether terms are required or optional, and how aggressively to prune the query. Table~\ref{tab:field-boosts} sweeps the title, abstract, and authors boosts in three parts (title with abstract fixed, abstract with title fixed, then authors on top of the winning ratio). Table~\ref{tab:topk-pruning} then prunes the query to the top-$K$ tokens by IDF\@. The strictness of the Boolean query (SHOULD vs.\ MUST) is reported in prose, since the effect is too one-sided to need a table.
+We now tune how the query is assembled: which fields to boost, whether terms are required or optional, and how aggressively to prune the query. Table~\ref{tab:field-boosts} sweeps the title, abstract, and authors boosts in three parts (title with abstract fixed, abstract with title fixed, then authors on top of the winning ratio). Table~\ref{tab:topk-pruning} then prunes the query to the top-$K$ tokens by IDF\@. The strictness of the Boolean query (OR vs.\ AND) is reported in prose, since the effect is too one-sided to need a table.
 
 \begin{table}[!ht]
     \caption{Field boost sweeps on the EN/FR/DE dev sets, MRR@5. Part A varies the title boost with the abstract boost fixed at 1.0; Part B varies the abstract boost with the title boost fixed at 2.0; Part C adds the authors boost on top of the winning combination (title boost 2, abstract boost 3).}
@@ -111,7 +111,7 @@ Parts A and B fix the title-to-abstract boost ratio. With the abstract boost hel
 
 Part C adds the authors field on top of these settings, with the peak at an authors boost of 1.5 (0.4719 average), about 1.5 points above the no-authors row. Pushing higher hurts as mismatched proper nouns start to dominate. The DE column gains the most (about 2.4 points), consistent with German-translated tweets more often naming researchers than the English originals. We also swept a venue boost from 0.0 to 0.5 with no measurable effect.
 
-We then varied the strictness of the Boolean query, marking the top-IDF terms as MUST and the rest as SHOULD\@. Even the lightest mixed variant (must${=}\,2$) drops the average to 0.087, and a full MUST query collapses to 0.007. Claims paraphrase findings rather than quoting them, so any hard term constraint reduces recall heavily. We use pure SHOULD throughout the rest of the chapter.
+We then varied the strictness of the Boolean query, marking the top-IDF terms as AND and the rest as OR\@. Even the lightest mixed variant (must${=}\,2$) drops the average to 0.087, and a full AND query collapses to 0.007. Claims paraphrase findings rather than quoting them, so any hard term constraint reduces recall heavily. We use pure OR throughout the rest of the chapter.
 
 \begin{table}[!ht]
     \caption{IDF-based query pruning on top of the fielded query, MRR@5. Each claim is tokenised with the English analyzer; only the top-$K$ tokens by IDF are passed as the query.}
