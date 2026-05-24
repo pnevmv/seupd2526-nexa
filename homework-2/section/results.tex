@@ -394,3 +394,47 @@ Table~\ref{tab:anova} reports the $F$-statistics and $p$-values. All three langu
 \end{itemize}
 
 In summary, the dense fusion component provides a robust, statistically confirmed improvement over the lexical baseline in every language. The cross-encoder reranking offers a statistically indistinguishable trade-off relative to hybrid retrieval across most of the evaluation, with its advantage in French and German and its disadvantage in English cancelling out at the aggregate level.
+
+\subsection{Test-Set Statistical Analysis}
+\label{subsec:res-stats-test}
+
+We repeated the two-way ANOVA and Tukey HSD analysis on the test set, replacing the base cross-encoder with the fine-tuned model described in Section~\ref{subsubsec:res-ce}. The three configurations compared are the lexical baseline (Run~1), the BGE-M3 hybrid ($\alpha{=}0.70$, Run~2), and the fine-tuned cross-encoder reranking the top-20 hybrid candidates. Figure~\ref{fig:rr5-boxplot-test} shows the per-query RR@5 distributions and Figure~\ref{fig:rr5-tukey-test} the Tukey HSD heat-maps.
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=\linewidth]{figure/rr5_boxplot_test.pdf}
+  \caption{Per-query RR@5 distributions on the test set. Diamonds mark the per-system mean; whiskers follow the Tukey 1.5$\times$IQR convention.}
+  \label{fig:rr5-boxplot-test}
+\end{figure}
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=\linewidth]{figure/rr5_tukey_test.pdf}
+  \caption{Two-way ANOVA and Tukey HSD post-hoc comparisons on the test set (fine-tuned CE). Cell colour and annotation conventions are the same as Figure~\ref{fig:rr5-tukey}.}
+  \label{fig:rr5-tukey-test}
+\end{figure}
+
+\begin{table}[!ht]
+  \caption{Two-way ANOVA results on the test set. All three languages reject $H_0$ at $\alpha = 0.05$.}
+  \label{tab:anova-test}
+  \centering
+  \begin{tabular}{lrrrrl}
+    \toprule
+    Language & $n$ queries & $F$ & $p$-value & $\alpha$ & Decision \\
+    \midrule
+    English & 6076 & 117.32 & $<0.001$ & 0.05 & Reject $H_0$ \\
+    French  & 1220 &  31.54 & $<0.001$ & 0.05 & Reject $H_0$ \\
+    German  &  876 &  27.60 & $<0.001$ & 0.05 & Reject $H_0$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:anova-test} confirms that at least one system differs significantly on every language partition. The Tukey HSD post-hoc results are:
+
+\begin{itemize}
+  \item \textbf{Lexical vs.\ Hybrid} is significant in all three languages ($p < 0.001$), replicating the dev-set finding on held-out data with substantially larger query sets.
+  \item \textbf{Lexical vs.\ Cross-Encoder} is significant in all three languages ($p < 0.001$ for EN and FR; $p = 0.000005$ for DE), confirming that the fine-tuned CE consistently outperforms the pure lexical system.
+  \item \textbf{Hybrid vs.\ Cross-Encoder} is significant in English ($p < 0.001$, Hybrid $>$ CE by $\Delta{=}0.030$) and German ($p = 0.035$, Hybrid $>$ CE by $\Delta{=}0.030$). In French the difference is not significant ($p = 0.054$, Hybrid $>$ CE by $\Delta{=}0.023$), indicating that fine-tuned CE and hybrid are statistically equivalent on that language.
+\end{itemize}
+
+Compared with the dev-set analysis, the test set confirms the dominance of hybrid over lexical and extends the Hybrid $>$ CE finding from English alone to English and German. The fine-tuned model therefore does not improve over the hybrid in any language on the test partition, which is consistent with the per-query MRR@5 values (EN: $0.5398$ vs.\ $0.5697$; FR: $0.5509$ vs.\ $0.5738$; DE: $0.4567$ vs.\ $0.4870$). The result reinforces the conclusion that the BGE-M3 fusion is the strongest and most reliable configuration across all languages and both evaluation partitions.
