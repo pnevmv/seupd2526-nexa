@@ -58,7 +58,7 @@ The third strategy is Pseudo-Relevance Feedback (PRF), which expands the query u
 
 \begin{enumerate}
     \item \textbf{Initial search.} The system runs the original query and keeps the top-$k$ documents (we use $k = 3$).
-    \item \textbf{Expansion and re-search.} The title and abstract of each of those documents are tokenised, numeric and very short tokens are dropped, and the five most frequent remaining terms are appended to the original query with a boost of \texttt{0.3f}. The search is then re-executed against the index.
+    \item \textbf{Expansion and re-search.} The title and abstract of each document are tokenised, and standard stopwords as well as numeric or excessively short tokens are removed. From the remaining terms, the five most frequent are appended to the original query with a boost of \texttt{0.3f}. Finally, the expanded search is re-executed against the index.
 \end{enumerate}
 
 The appeal of PRF is that the expansion terms come straight from the corpus, so they are guaranteed to be in-vocabulary for the index. The cost is that every claim now requires two Lucene searches instead of one, which roughly doubles retrieval time. For this reason PRF is disabled in the timed runs we report.
