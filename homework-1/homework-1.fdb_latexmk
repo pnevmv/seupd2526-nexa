@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex homework-1"] 1778185052.88699 "homework-1.aux" "homework-1.bbl" "homework-1" 1778185055.00437 0
-  "./bibliography.bib" 1778169834.00549 834984 15d422eeefc8bc34ae84fb4b1d286b16 ""
+["bibtex homework-1"] 1778190329.15511 "homework-1.aux" "homework-1.bbl" "homework-1" 1778190331.06769 0
+  "./bibliography.bib" 1778190309.8167 834984 15d422eeefc8bc34ae84fb4b1d286b16 ""
   "./proceedings.bib" 1775935174.225 199630 9f8f11a569ca106abe92744ef504ba38 ""
   "/usr/local/texlive/2025/texmf-dist/bibtex/bst/elsarticle/elsarticle-num-names.bst" 1736456871 28896 8b641a5a78ad57e6a7ef6fdfeefc773c ""
-  "homework-1.aux" 1778185054.60619 54371 ddbd75483edea7aeb89452a1577fb531 "pdflatex"
+  "homework-1.aux" 1778190330.68292 52332 6c908889f67ad4c3b5037fa35253d645 "pdflatex"
   (generated)
   "homework-1.bbl"
   "homework-1.blg"
   (rewritten before read)
-["pdflatex"] 1778185053.02241 "homework-1.tex" "homework-1.pdf" "homework-1" 1778185055.00456 0
+["pdflatex"] 1778190329.31408 "homework-1.tex" "homework-1.pdf" "homework-1" 1778190331.06787 0
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/fontawesome5/fa5free1.enc" 1622837620 3042 0e2b14b9be7d01075a4c4591d5d1781b ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_75t36g.enc" 1727126258 3035 7d37ee7011b797a1b8ca3680e8da3d4d ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/libertinus-type1/lbn1_hvvyjb.enc" 1727126258 3042 e745bbb5ec46764a4020493270d457fb ""
@@ -249,20 +249,19 @@
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
   "acronyms.tex" 1775935174.21933 22509 a6f26016cee65b3230106d179b271f4c ""
   "ceurart.cls" 1775935174.22199 84767 2c6f7928cfcf4525d25a7760fec1fcc1 ""
-  "figure/sample.pdf" 1775935174.22235 119292 826e55aec3ba3678d6f496f5d490d3b8 ""
-  "homework-1.abs" 1778185054.31116 686 789b2c072a25fce6280f8c1d4574fe6b "pdflatex"
-  "homework-1.aux" 1778185054.60619 54371 ddbd75483edea7aeb89452a1577fb531 "pdflatex"
-  "homework-1.bbl" 1778185053.01965 1764 b2c3d1ed46c88f384a81ad86760fbbe5 "bibtex homework-1"
-  "homework-1.out" 1778185054.29801 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "homework-1.tex" 1778163895.60899 4873 1fc2138344b841f5fafd96e0f7884aef ""
-  "homework-1.xmpdata" 1778185054.61266 627 a77608edfed9446193e677d5c40d13db "pdflatex"
-  "pdfa.xmpi" 1778185054.03095 6953 2c37e57591729b204a6dc5f3c805d41e "pdflatex"
-  "section/conclusion.tex" 1775935174.22523 230 40f625c50f8dcaf575f276178acc2d0f ""
-  "section/contributions.tex" 1775935174.22533 2933 dcee18ac4a5046284ba8bd9c2f65ce35 ""
-  "section/introduction.tex" 1778163895.61045 1580 195bbdf164fad72d489a5a4f7407de3d ""
-  "section/methodology.tex" 1778185045.65275 21939 613a0f6dd89a9f6bf731bbbd635f6433 ""
-  "section/results.tex" 1778169872.8236 31288 5fc01a217d50422c53cf045c3d640a0d ""
-  "section/setup.tex" 1778169883.14942 2091 a79f090829e896305046a4b3f89dae1e ""
+  "homework-1.abs" 1778190330.43752 686 789b2c072a25fce6280f8c1d4574fe6b "pdflatex"
+  "homework-1.aux" 1778190330.68292 52332 6c908889f67ad4c3b5037fa35253d645 "pdflatex"
+  "homework-1.bbl" 1778190329.31314 1538 6669d196f9b5d94eac5bdf2da72959c3 "bibtex homework-1"
+  "homework-1.out" 1778190330.42478 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "homework-1.tex" 1778190309.82203 4963 eeedca33b17d658fb0716cc4e192f002 ""
+  "homework-1.xmpdata" 1778190330.68841 627 a77608edfed9446193e677d5c40d13db "pdflatex"
+  "pdfa.xmpi" 1778190330.20158 6953 37089fc4afbb56b5f0060075689bcf2c "pdflatex"
+  "section/conclusion.tex" 1778190309.82347 4396 28e2e50d08bc30b1a0fa5571f6f04c03 ""
+  "section/contributions.tex" 1778190309.82377 2711 e0e60457334b013472a677f107848432 ""
+  "section/introduction.tex" 1778190309.82415 1573 74cfc9796f6183550cbc2bb02a829b88 ""
+  "section/methodology.tex" 1778190309.82464 20075 a4133f6ad1a6b8f823e64d20763f2859 ""
+  "section/results.tex" 1778190309.82533 29887 22fa2b52e206ffeb3aa0f16477b16e67 ""
+  "section/setup.tex" 1778190309.82571 2564 8eae3e6f3f72f6e404c2527e8516d685 ""
   (generated)
   "homework-1.abs"
   "homework-1.aux"
