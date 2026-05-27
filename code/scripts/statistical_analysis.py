@@ -11,8 +11,10 @@ Measure: RR@5 (Reciprocal Rank at cutoff 5), computed directly from run files
 """
 
 import json
+import os
 import itertools
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 from scipy.stats import studentized_range, f
@@ -21,30 +23,30 @@ from scipy.stats import studentized_range, f
 # ---------------------------------------------------------------------------
 # paths
 # ---------------------------------------------------------------------------
-BASE = "/Users/nothingtodo/IdeaProjects/seupd2526-nexa"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 RUN_FILES = {
     "en": {
-        "Lexical":       f"{BASE}/runs/wider-en-dev-lexical.txt",
-        "Hybrid":        f"{BASE}/runs/hybrid-en-dev-bge-fusion-10k-top100.txt",
-        "CrossEncoder":  f"{BASE}/runs/en_dev_ce_reranked.txt",
+        "Lexical":       str(REPO_ROOT / "runs/wider-en-dev-lexical.txt"),
+        "Hybrid":        str(REPO_ROOT / "runs/hybrid-en-dev-bge-fusion-10k-top100.txt"),
+        "CrossEncoder":  str(REPO_ROOT / "runs/en_dev_ce_reranked.txt"),
     },
     "fr": {
-        "Lexical":       f"{BASE}/runs/wider-fr-dev-lexical.txt",
-        "Hybrid":        f"{BASE}/runs/hybrid-fr-dev-bge-fusion-10k-top100.txt",
-        "CrossEncoder":  f"{BASE}/runs/fr_dev_ce_reranked.txt",
+        "Lexical":       str(REPO_ROOT / "runs/wider-fr-dev-lexical.txt"),
+        "Hybrid":        str(REPO_ROOT / "runs/hybrid-fr-dev-bge-fusion-10k-top100.txt"),
+        "CrossEncoder":  str(REPO_ROOT / "runs/fr_dev_ce_reranked.txt"),
     },
     "de": {
-        "Lexical":       f"{BASE}/runs/wider-de-dev-lexical.txt",
-        "Hybrid":        f"{BASE}/runs/hybrid-de-dev-bge-fusion-10k-top100.txt",
-        "CrossEncoder":  f"{BASE}/runs/de_dev_ce_reranked.txt",
+        "Lexical":       str(REPO_ROOT / "runs/wider-de-dev-lexical.txt"),
+        "Hybrid":        str(REPO_ROOT / "runs/hybrid-de-dev-bge-fusion-10k-top100.txt"),
+        "CrossEncoder":  str(REPO_ROOT / "runs/de_dev_ce_reranked.txt"),
     },
 }
 
 DEV_FILES = {
-    "en": f"{BASE}/datasets/en_dev.json",
-    "fr": f"{BASE}/datasets/fr_dev.json",
-    "de": f"{BASE}/datasets/de_dev.json",
+    "en": str(REPO_ROOT / "datasets/en_dev.json"),
+    "fr": str(REPO_ROOT / "datasets/fr_dev.json"),
+    "de": str(REPO_ROOT / "datasets/de_dev.json"),
 }
 
 CUTOFF = 5
@@ -55,7 +57,7 @@ CUTOFF = 5
 # ---------------------------------------------------------------------------
 def load_qrels(dev_path):
     """Return dict: query_id (int) -> relevant_doc_id (int)."""
-    with open(dev_path) as f:
+    with open(dev_path, encoding='utf-8') as f:
         data = json.load(f)
     return {item["index"]: item["pubkey"] for item in data}
 
@@ -67,7 +69,7 @@ def parse_run(run_path):
     The rank column is ignored; we sort by score to be robust to indexing differences.
     """
     rows = defaultdict(list)
-    with open(run_path) as f:
+    with open(run_path, encoding='utf-8') as f:
         for line in f:
             parts = line.split()
             if len(parts) < 5:
@@ -220,36 +222,53 @@ if __name__ == "__main__":
     print(f"Systems: Lexical (BM25) | Hybrid (BM25+BGE-M3) | Cross-Encoder")
 
     results_by_lang = {}
+    active_langs = []
+    
     for lang in ["en", "fr", "de"]:
-        res, qids, sdata = run_analysis_for_language(lang)
-        results_by_lang[lang] = (res, qids, sdata)
+        dev_exists = os.path.exists(DEV_FILES[lang])
+        runs_exist = all(os.path.exists(RUN_FILES[lang][name]) for name in ["Lexical", "Hybrid", "CrossEncoder"])
+        if dev_exists and runs_exist:
+            res, qids, sdata = run_analysis_for_language(lang)
+            results_by_lang[lang] = (res, qids, sdata)
+            active_langs.append(lang)
+        else:
+            missing_parts = []
+            if not dev_exists:
+                missing_parts.append(f"missing {os.path.basename(DEV_FILES[lang])}")
+            if not runs_exist:
+                missing_runs = [name for name in ["Lexical", "Hybrid", "CrossEncoder"] if not os.path.exists(RUN_FILES[lang][name])]
+                missing_parts.append(f"missing runs: {', '.join(missing_runs)}")
+            print(f"\nSkipping language {lang.upper()} ({'; '.join(missing_parts)})")
 
-    # combined analysis across all languages
-    print(f"\n{'='*60}")
-    print(f"  COMBINED (all languages pooled)")
-    print(f"{'='*60}")
+    if len(active_langs) > 0:
+        # combined analysis across active languages
+        print(f"\n{'='*60}")
+        print(f"  COMBINED (pooled languages: {', '.join(l.upper() for l in active_langs)})")
+        print(f"{'='*60}")
 
-    system_names = ["Lexical", "Hybrid", "CrossEncoder"]
-    combined = {name: [] for name in system_names}
-    for lang in ["en", "fr", "de"]:
-        _, qids, sdata = results_by_lang[lang]
-        for name, arr in zip(system_names, sdata):
-            combined[name].extend(arr.tolist())
+        system_names = ["Lexical", "Hybrid", "CrossEncoder"]
+        combined = {name: [] for name in system_names}
+        for lang in active_langs:
+            _, qids, sdata = results_by_lang[lang]
+            for name, arr in zip(system_names, sdata):
+                combined[name].extend(arr.tolist())
 
-    combined_data = [np.array(combined[name]) for name in system_names]
-    print(f"  Total queries (pooled): {len(combined_data[0])}")
-    print(f"\n  Per-system mean RR@{CUTOFF} (combined):")
-    for name, arr in zip(system_names, combined_data):
-        print(f"    {name:15s}: {np.mean(arr):.4f}")
+        combined_data = [np.array(combined[name]) for name in system_names]
+        print(f"  Total queries (pooled): {len(combined_data[0])}")
+        print(f"\n  Per-system mean RR@{CUTOFF} (combined):")
+        for name, arr in zip(system_names, combined_data):
+            print(f"    {name:15s}: {np.mean(arr):.4f}")
 
-    result_combined = two_way_anova_tukey(combined_data, system_names)
-    print(f"\n  Two-way ANOVA (combined):")
-    print(f"    F={result_combined['f_val']:.4f}, p={result_combined['p_val']:.6f}")
-    sig = "REJECT H0" if result_combined["p_val"] < 0.05 else "FAIL TO REJECT H0"
-    print(f"    Decision: {sig}")
-    print(f"\n  Tukey HSD (combined):")
-    print(f"    {'Pair':<35} {'Diff':>8} {'p-value':>10} {'Sig?':>6}")
-    for r in result_combined["tukey"]:
-        a, b = r["pair"]
-        print(f"    {a:15s} vs {b:15s}  {r['mean_diff']:+.4f}   {r['p_value']:9.6f}   "
-              f"{'YES' if r['significant'] else 'no':>4}")
+        result_combined = two_way_anova_tukey(combined_data, system_names)
+        print(f"\n  Two-way ANOVA (combined):")
+        print(f"    F={result_combined['f_val']:.4f}, p={result_combined['p_val']:.6f}")
+        sig = "REJECT H0" if result_combined["p_val"] < 0.05 else "FAIL TO REJECT H0"
+        print(f"    Decision: {sig}")
+        print(f"\n  Tukey HSD (combined):")
+        print(f"    {'Pair':<35} {'Diff':>8} {'p-value':>10} {'Sig?':>6}")
+        for r in result_combined["tukey"]:
+            a, b = r["pair"]
+            print(f"    {a:15s} vs {b:15s}  {r['mean_diff']:+.4f}   {r['p_value']:9.6f}   "
+                  f"{'YES' if r['significant'] else 'no':>4}")
+    else:
+        print("\nNo languages have complete datasets and runs to perform pooled statistical analysis.")
