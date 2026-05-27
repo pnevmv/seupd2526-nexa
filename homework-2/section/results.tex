@@ -438,3 +438,64 @@ Table~\ref{tab:anova-test} confirms that at least one system differs significant
 \end{itemize}
 
 Compared with the dev-set analysis, the test set confirms the dominance of hybrid over lexical and extends the Hybrid $>$ CE finding from English alone to English and German. The fine-tuned model therefore does not improve over the hybrid in any language on the test partition, which is consistent with the per-query MRR@5 values (EN: $0.5398$ vs.\ $0.5697$; FR: $0.5509$ vs.\ $0.5738$; DE: $0.4567$ vs.\ $0.4870$). The result reinforces the conclusion that the BGE-M3 fusion is the strongest and most reliable configuration across all languages and both evaluation partitions.
+
+\begin{table*}[t]
+\centering
+\caption{Detailed variance decomposition (SS, df, MS) for the Two-way ANOVA on Development and Test sets}
+\label{tab:anova_variance_details}
+\small
+\renewcommand{\arraystretch}{1.3}
+
+
+\begin{tabular}{|l|l|l|c|c|c|}
+\hline
+\textbf{Dataset} & \textbf{Language} & \textbf{Source of Variation} & \textbf{SS} & \textbf{df} & \textbf{MS} \\
+\hline
+\hline
+\textbf{Development Set} 
+& English & Systems & 20.6108 & 2 & 10.3054 \\
+& & Topics (Queries) & 2065.5555 & 3904 & 0.5291 \\
+& & Error & 429.5688 & 7808 & 0.0550 \\
+\cline{2-6}
+& French & Systems & 4.4135 & 2 & 2.2067 \\
+& & Topics (Queries) & 352.4729 & 701 & 0.5028 \\
+& & Error & 84.2036 & 1402 & 0.0601 \\
+\cline{2-6}
+& German & Systems & 1.9489 & 2 & 0.9744 \\
+& & Topics (Queries) & 201.7964 & 385 & 0.5241 \\
+& & Error & 42.8167 & 770 & 0.0556 \\
+\hline
+\textbf{Test Set} 
+& English & Systems & 12.6469 & 2 & 6.3234 \\
+& & Topics (Queries) & 3226.8517 & 6075 & 0.5312 \\
+& & Error & 654.9016 & 12150 & 0.0539 \\
+\cline{2-6}
+& French & Systems & 3.7525 & 2 & 1.8762 \\
+& & Topics (Queries) & 636.5225 & 1219 & 0.5222 \\
+& & Error & 145.0290 & 2438 & 0.0595 \\
+\cline{2-6}
+& German & Systems & 3.5873 & 2 & 1.7936 \\
+& & Topics (Queries) & 424.0025 & 875 & 0.4846 \\
+& & Error & 113.7323 & 1750 & 0.0650 \\
+\hline
+\end{tabular}
+
+
+\begin{flushleft}
+\normalsize
+\textbf{Key Statistical Metrics Defined:}
+\begin{itemize}
+    \item \textbf{SS (Sum of Squares):} Measures the total variability or dispersion of the data relative to the mean. It quantifies the total deviation associated with a specific source of variation (e.g., the effect of the systems, the effect of the queries, or pure random error).
+    
+    \item \textbf{df (Degrees of Freedom):} Represents the number of values that are "free" to vary within the data, or the amount of independent information available to estimate variability. 
+    
+    \item \textbf{MS (Mean Square):} Calculated by dividing the Sum of Squares by the respective Degrees of Freedom ($MS = \frac{SS}{df}$). It represents the standardized estimate of variance for each component.
+\end{itemize}
+
+\vspace{0.2cm}
+\noindent \textbf{Why are they useful?} \\
+In a Two-way ANOVA, these three elements work together to decompose the total variability. Isolating the values of \textit{SS}, \textit{df}, and \textit{MS} makes it possible to understand how much of the variation in the results is attributable to the factors of interest (the \textit{Systems} or \textit{Topics}) and how much is simply "noise" (\textit{Error}). Most importantly, the ratio between the MS of a given factor and the MS of the error generates the $F$-statistic, which is the key value used to determine whether the observed differences in performance are statistically significant or simply due to chance.
+\end{flushleft}
+
+
+\end{table*}
