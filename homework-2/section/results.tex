@@ -439,13 +439,12 @@ Table~\ref{tab:anova-test} confirms that at least one system differs significant
 
 Compared with the dev-set analysis, the test set confirms the dominance of hybrid over lexical and extends the Hybrid $>$ CE finding from English alone to English and German. The fine-tuned model therefore does not improve over the hybrid in any language on the test partition, which is consistent with the per-query MRR@5 values (EN: $0.5398$ vs.\ $0.5697$; FR: $0.5509$ vs.\ $0.5738$; DE: $0.4567$ vs.\ $0.4870$). The result reinforces the conclusion that the BGE-M3 fusion is the strongest and most reliable configuration across all languages and both evaluation partitions.
 
-\begin{table*}[t]
+\begin{table}[!ht]
 \centering
 \caption{Detailed variance decomposition (SS, df, MS) for the Two-way ANOVA on Development and Test sets}
 \label{tab:anova_variance_details}
 \small
 \renewcommand{\arraystretch}{1.3}
-
 
 \begin{tabular}{|l|l|l|c|c|c|}
 \hline
@@ -480,7 +479,6 @@ Compared with the dev-set analysis, the test set confirms the dominance of hybri
 \hline
 \end{tabular}
 
-
 \begin{flushleft}
 \normalsize
 \textbf{Key Statistical Metrics Defined:}
@@ -497,5 +495,4 @@ Compared with the dev-set analysis, the test set confirms the dominance of hybri
 In a Two-way ANOVA, these three elements work together to decompose the total variability. Isolating the values of \textit{SS}, \textit{df}, and \textit{MS} makes it possible to understand how much of the variation in the results is attributable to the factors of interest (the \textit{Systems} or \textit{Topics}) and how much is simply "noise" (\textit{Error}). Most importantly, the ratio between the MS of a given factor and the MS of the error generates the $F$-statistic, which is the key value used to determine whether the observed differences in performance are statistically significant or simply due to chance.
 \end{flushleft}
 
-
-\end{table*}
+\end{table}
