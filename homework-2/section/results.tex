@@ -356,13 +356,13 @@ DE trails EN and FR by 13--14 MRR@5 points in every configuration. Its lexical m
 \subsection{Statistical Analysis}
 \label{subsec:res-stats}
 
-To verify that the MRR@5 differences reported above are not due to sampling variance, we performed a two-way ANOVA on the per-query RR@5 values, blocking on topics~\citep{Sakai2016}. The two-way design accounts for query-level difficulty, which increases statistical power compared to a one-way test. The three configurations (Lexical, Hybrid, Cross-Encoder) act as treatment factors; each query constitutes a block that is evaluated by all three systems simultaneously. Figure~\ref{fig:rr5-boxplot} shows the resulting RR@5 distributions per language, and Figure~\ref{fig:rr5-tukey} reports the two-way ANOVA $F$-statistics and the post-hoc Tukey HSD pairwise comparisons ($\alpha = 0.05$).
+To verify that the MRR@5 differences reported above are not due to sampling variance, we performed a two-way ANOVA on the per-query RR@5 values, blocking on topics~\citep{Sakai2016}. The two-way design accounts for query-level difficulty, which increases statistical power compared to a one-way test. The three configurations (Lexical, Hybrid, Cross-Encoder) act as treatment factors; each query constitutes a block that is evaluated by all three systems simultaneously. Figure~\ref{fig:rr5-dev} shows the distribution of the first relevant rank for each language and Figure~\ref{fig:rr5-tukey} reports the two-way ANOVA $F$-statistics and the post-hoc Tukey HSD pairwise comparisons ($\alpha = 0.05$).
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=\linewidth]{figure/rr5_boxplot.pdf}
-  \caption{Per-query RR@5 distributions for the three system configurations across all dev queries. Diamonds mark the per-system mean. The median line and whiskers follow the standard Tukey convention (1.5$\times$IQR).}
-  \label{fig:rr5-boxplot}
+  \includegraphics[width=\linewidth]{figure/rank_distribution_dev.pdf}
+  \caption{Distributions of the rank of the first relevant document for the three system configurations on the dev dataset.}
+  \label{fig:rr5-dev}
 \end{figure}
 
 \begin{figure}[!ht]
@@ -395,18 +395,19 @@ Table~\ref{tab:anova} reports the $F$-statistics and $p$-values. All three langu
   \item \textbf{Hybrid vs.\ Cross-Encoder} is significant only in English ($p < 0.001$, Hybrid $>$ Cross-Encoder by $\Delta{=}0.027$). In French and German the cross-encoder leads by approximately 0.02 MRR@5 but the difference is not statistically significant ($p = 0.224$ and $p = 0.582$ respectively), so neither system is conclusively better on those languages.
 \end{itemize}
 
+
 In summary, the dense fusion component provides a robust, statistically confirmed improvement over the lexical baseline in every language. The cross-encoder reranking offers a statistically indistinguishable trade-off relative to hybrid retrieval across most of the evaluation, with its advantage in French and German and its disadvantage in English cancelling out at the aggregate level.
 
 \subsection{Test-Set Statistical Analysis}
 \label{subsec:res-stats-test}
 
-We repeated the two-way ANOVA and Tukey HSD analysis on the test set, replacing the base cross-encoder with the fine-tuned model described in Section~\ref{subsubsec:res-ce}. The three configurations compared are the lexical baseline (Run~1), the BGE-M3 hybrid ($\alpha{=}0.80$, Run~2), and the fine-tuned cross-encoder reranking the top-20 hybrid candidates. Figure~\ref{fig:rr5-boxplot-test} shows the per-query RR@5 distributions and Figure~\ref{fig:rr5-tukey-test} the Tukey HSD heat-maps.
+We repeated the two-way ANOVA and Tukey HSD analysis on the test set, replacing the base cross-encoder with the fine-tuned model described in Section~\ref{subsubsec:res-ce}. The three configurations compared are the lexical baseline (Run~1), the BGE-M3 hybrid ($\alpha{=}0.80$, Run~2), and the fine-tuned cross-encoder reranking the top-20 hybrid candidates. Figure~\ref{fig:rr5-test} shows the first relevant rank distributions by language and Figure~\ref{fig:rr5-tukey-test} the Tukey HSD heat-maps.
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=\linewidth]{figure/rr5_boxplot_test.pdf}
-  \caption{Per-query RR@5 distributions on the test set. Diamonds mark the per-system mean; whiskers follow the Tukey 1.5$\times$IQR convention.}
-  \label{fig:rr5-boxplot-test}
+  \includegraphics[width=\linewidth]{figure/rank_distribution_test.pdf}
+  \caption{First relevent rank distribution on the test set.}
+  \label{fig:rr5-test}
 \end{figure}
 
 \begin{figure}[!ht]
