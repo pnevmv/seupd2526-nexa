@@ -361,7 +361,7 @@ To verify that the MRR@5 differences reported above are not due to sampling vari
 \begin{figure}[!ht]
   \centering
   \includegraphics[width=\linewidth]{figure/rank_distribution_dev.pdf}
-  \caption{Distributions of the rank of the first relevant document for the three system configurations on the dev dataset.}
+  \caption{Rank of the relevant document per query, dev set. Bars split queries into seven buckets: ranks 1--5, ranks 6--100 (found but outside the top 5, a re-ranking failure), and Missing (not in the top 100, a recall failure). The cross-encoder is applied only to a short candidate list from the hybrid run, so any document outside that list is counted as Missing here.}
   \label{fig:rr5-dev}
 \end{figure}
 
@@ -401,12 +401,12 @@ In summary, the dense fusion component provides a robust, statistically confirme
 \subsection{Test-Set Statistical Analysis}
 \label{subsec:res-stats-test}
 
-We repeated the two-way ANOVA and Tukey HSD analysis on the test set, replacing the base cross-encoder with the fine-tuned model described in Section~\ref{subsubsec:res-ce}. The three configurations compared are the lexical baseline (Run~1), the BGE-M3 hybrid ($\alpha{=}0.80$, Run~2), and the fine-tuned cross-encoder reranking the top-20 hybrid candidates. Figure~\ref{fig:rr5-test} shows the first relevant rank distributions by language and Figure~\ref{fig:rr5-tukey-test} the Tukey HSD heat-maps.
+We repeated the two-way ANOVA and Tukey HSD analysis on the test set with the same three configurations as on dev: the lexical baseline (Run~1), the BGE-M3 hybrid ($\alpha{=}0.80$, Run~2), and the fine-tuned cross-encoder of Section~\ref{subsubsec:res-ce} applied on top of Run~2. Figure~\ref{fig:rr5-test} shows the first relevant rank distributions by language and Figure~\ref{fig:rr5-tukey-test} the Tukey HSD heat-maps.
 
 \begin{figure}[!ht]
   \centering
   \includegraphics[width=\linewidth]{figure/rank_distribution_test.pdf}
-  \caption{First relevent rank distribution on the test set.}
+  \caption{Rank of the relevant document per query, test set. Bucket conventions follow Figure~\ref{fig:rr5-dev}.}
   \label{fig:rr5-test}
 \end{figure}
 
@@ -452,9 +452,9 @@ Compared with the dev-set analysis, the test set confirms the dominance of hybri
     \textbf{Dataset} & \textbf{Language} & \textbf{Source of Variation} & \textbf{SS} & \textbf{df} & \textbf{MS} \\
     \midrule
     \multirow{9}{*}{\textbf{Dev set}}
-    & \multirow{3}{*}{English} & Systems          & 20.6108   &  2    & 10.3054 \\
-    &                          & Topics (Queries) & 2065.5555 & 3904  &  0.5291 \\
-    &                          & Error            & 429.5688  & 7808  &  0.0550 \\
+    & \multirow{3}{*}{English} & Systems          &    9.8397 &  2    &  4.9198 \\
+    &                          & Topics (Queries) & 2084.0922 & 3904  &  0.5338 \\
+    &                          & Error            &  407.4079 & 7808  &  0.0522 \\
     \cmidrule{2-6}
     & \multirow{3}{*}{French}  & Systems          &  4.4135   &  2    &  2.2067 \\
     &                          & Topics (Queries) & 352.4729  &  701  &  0.5028 \\
