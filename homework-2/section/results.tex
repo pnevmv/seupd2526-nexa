@@ -230,7 +230,7 @@ We swept $\alpha$ from 0.50 to 0.90 in steps of 0.02. The per-language peaks fal
 
 Reranking alone adds only 1.2 points of average MRR@5. The lexical run already places the correct document near the top of the 50-candidate list for many queries, leaving little room for re-ordering to help. Fusion gains 5.7 points, a much larger margin, because it can promote candidates that BM25 ranked anywhere in positions 6 to 50: a document whose precise vocabulary differs from the claim but whose meaning is close is scored low by BM25 and high by the cosine, and the combined score moves it into the top 5. The optimal $\alpha{=}0.70$ assigns the embedding signal 2.3 times the weight of BM25, consistent with BM25 operating near its ceiling after the careful lexical tuning in the previous sections and the dense signal providing genuinely complementary evidence.
 
-We also experimented with a full-collection dense retrieval variant in which cosine similarity is computed over all 10,000 documents rather than restricted to the top-50 lexical candidates. Documents not in the lexical shortlist receive a BM25 score of zero, so for those candidates the fusion score reduces to the cosine term alone. At $\alpha{=}0.80$ this configuration achieves a higher MRR@5 than the top-50 fusion because it can surface correct documents that the lexical run missed entirely. It is used as the baseline for the cross-encoder experiments in Section~\ref{subsubsec:res-ce}.
+We also experimented with a full-collection dense retrieval variant in which cosine similarity is computed over all 10,000 documents rather than restricted to the top-50 lexical candidates. Documents not in the lexical shortlist receive a BM25 score of zero, so for those candidates the fusion score reduces to the cosine term alone. At $\alpha{=}0.80$ this configuration achieves a higher MRR@5 than the top-50 fusion because it can surface correct documents that the lexical run missed entirely. This full dense configuration is the one submitted as Run~2 and is used as the baseline for the cross-encoder experiments in Section~\ref{subsubsec:res-ce}.
 
 \subsubsection{SPECTER2 vs BGE-M3}
 
@@ -280,7 +280,7 @@ Fine-tuning improves French by 2.2 points and German by 1.7 points but degrades 
 \subsection{Final Submitted Runs}
 \label{subsec:res-final}
 
-Combining the winners of each phase gives the two configurations we submitted to the official evaluation. Run~1 is the pure lexical system, included as a reproducible baseline that depends only on the Lucene index and requires no GPU at query time. Run~2 is the primary submission: the same lexical system with BGE-M3 score fusion at $\alpha{=}0.70$, which was the best configuration identified on the dev set.
+Combining the winners of each phase gives the two configurations we submitted to the official evaluation. Run~1 is the pure lexical system, included as a reproducible baseline that depends only on the Lucene index and requires no GPU at query time. Run~2 is the primary submission: the full dense BGE-M3 fusion system (cosine scored over all 10\,000 documents, $\alpha{=}0.80$), which achieved the highest dev-set MRR@5 across all configurations evaluated.
 
 \begin{table}[!ht]
     \caption{Submitted runs and dev-set MRR@5 per language.}
@@ -291,17 +291,17 @@ Combining the winners of each phase gives the two configurations we submitted to
         Run & Description & EN & FR & DE & Avg \\
         \midrule
         Run 1 & Lexical only (best lexical config)              & 0.5172 & 0.5145 & 0.3841 & 0.4719 \\
-        Run 2 & Hybrid: lexical $+$ BGE-M3 fusion ($\alpha{=}0.70$) & 0.5768 & 0.5770 & 0.4331 & 0.5290 \\
+        Run 2 & Full dense hybrid: BGE-M3 fusion ($\alpha{=}0.80$, all 10\,000 docs) & 0.5875 & 0.5990 & 0.4615 & 0.5493 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-Run~2 gains 5.7 points of average MRR@5 over Run~1 on the dev set. The improvement is consistent across all three languages: $+6.0$ points on EN, $+6.2$ on FR, and $+4.9$ on DE, so no single language is disproportionately favoured or penalised by the fusion. All hyperparameters (field boosts, $k_1$, $b$, $\alpha$, and topK) were tuned only on the dev split.
+Run~2 gains 7.7 points of average MRR@5 over Run~1 on the dev set. The improvement is consistent across all three languages: $+7.0$ points on EN, $+8.5$ on FR, and $+7.7$ on DE, so no single language is disproportionately favoured or penalised by the fusion. All hyperparameters (field boosts, $k_1$, $b$, $\alpha$, and topK) were tuned only on the dev split.
 
 Table~\ref{tab:test-results} reports the official test-set scores for Run~2.
 
 \begin{table}[!ht]
-    \caption{Official test-set MRR@5 for the primary submitted run (Run~2: hybrid lexical $+$ BGE-M3 fusion, $\alpha{=}0.70$).}
+    \caption{Official test-set MRR@5 for the primary submitted run (Run~2: full dense BGE-M3 fusion, $\alpha{=}0.80$, all 10\,000 documents).}
     \label{tab:test-results}
     \centering
     \begin{tabular}{lcccc}
@@ -313,14 +313,14 @@ Table~\ref{tab:test-results} reports the official test-set scores for Run~2.
     \end{tabular}
 \end{table}
 
-The test-set average of 0.5435 is 1.5 points above the dev-set result of 0.5290, indicating that the system did not overfit to the dev split. Per-language results are mixed: EN and FR drop slightly from dev to test ($-0.7$ and $-0.3$ points respectively), while DE improves by a substantial 5.4 points. The DE gain is consistent with the dev set being a harder sample for German. Its dev-set scores were lower throughout the tuning phase, so the test distribution appears somewhat more favourable for DE\@. Overall, the hybrid system transfers reliably across the unseen data, and the dense fusion gain over a pure lexical run is confirmed on unseen data.
+The test-set average of 0.5435 is 0.6 points below the dev-set result of 0.5493, a small gap indicating the system generalised well to unseen data without significant overfitting. Per-language results are mixed: EN and FR drop from dev to test ($-1.8$ and $-2.5$ points respectively), while DE improves by 2.6 points. The DE gain is consistent with the dev set being a harder sample for German---its dev-set scores were lower throughout the tuning phase, so the test distribution appears somewhat more favourable for DE\@. Overall, the hybrid system transfers reliably across the unseen data, and the dense fusion gain over a pure lexical run is confirmed on held-out data.
 
 \subsubsection*{Dev-set breakdown analysis}
 
-To see where the MRR@5 gains come from, Table~\ref{tab:dev-breakdown} breaks the dev-set scores into hit rates and the fraction of queries for which no relevant document appeared in the top 100 (missing). All three system configurations are shown for comparison, including the fine-tuned cross-encoder from Section~\ref{subsubsec:res-ce} (even though it was not submitted).
+To see where the MRR@5 gains come from, Table~\ref{tab:dev-breakdown} breaks the dev-set scores into hit rates and the fraction of queries for which no relevant document appeared in the top 100 (missing). Three configurations are compared: the lexical baseline (Run~1), the submitted full dense hybrid (Run~2: BGE-M3 cosine over all 10\,000 documents, $\alpha{=}0.80$), and the fine-tuned cross-encoder applied on top of Run~2.
 
 \begin{table}[!ht]
-    \caption{Dev-set retrieval breakdown for all three system configurations. Hit@1 and Hit@5 are cumulative (percentage of queries with the correct document ranked $\leq\!1$ and $\leq\!5$, respectively); Missing is the fraction of queries where the correct document does not appear in the top 100.}
+    \caption{Dev-set retrieval breakdown for the three evaluated configurations. The hybrid row corresponds to the submitted Run~2 (full dense BGE-M3 fusion, $\alpha{=}0.80$, all 10\,000 documents, avg MRR@5\,=\,0.5493). Hit@1 and Hit@5 are cumulative (percentage of queries with the correct document ranked $\leq\!1$ and $\leq\!5$, respectively); Missing is the fraction of queries where the correct document does not appear in the top 100.}
     \label{tab:dev-breakdown}
     \centering
     \begin{tabular}{llcccc}
@@ -331,9 +331,9 @@ To see where the MRR@5 gains come from, Table~\ref{tab:dev-breakdown} breaks the
                                     & FR & 0.5145 & 44.9 & 61.0 & 24.5 \\
                                     & DE & 0.3841 & 32.9 & 48.2 & 35.2 \\
         \midrule
-        Hybrid ($\alpha{=}0.70$)    & EN & 0.5875 & 53.0 & 67.7 & 14.6 \\
-                                    & FR & 0.5990 & 53.7 & 69.5 & 14.0 \\
-                                    & DE & 0.4615 & 40.2 & 55.4 & 19.4 \\
+        Full dense hybrid ($\alpha{=}0.80$) & EN & 0.5875 & 53.0 & 67.7 & 14.6 \\
+                                           & FR & 0.5990 & 53.7 & 69.5 & 14.0 \\
+                                           & DE & 0.4615 & 40.2 & 55.4 & 19.4 \\
         \midrule
         Cross-encoder (not submitted) & EN & 0.5606 & 49.5 & 66.9 & 23.3 \\
                                       & FR & 0.6206 & 56.7 & 70.8 & 22.8 \\
