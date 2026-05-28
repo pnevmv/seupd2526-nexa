@@ -69,7 +69,7 @@ url=https://www.dei.unipd.it/~ferro/,
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-  This paper presents the system developed by Team NEXA for Task 1 of the CLEF 2026 CheckThat! Lab, focusing on the retrieval of scientific sources for claims found on social media. Given the challenge of linking informal web discourse to formal scientific literature across English, German, and French, we propose a multi-stage retrieval framework. Our approach combines traditional lexical search using BM25 with a neural re-ranking component based on multilingual transformer models. The system aims to bridge the linguistic and stylistic gap between social media posts and academic abstracts, providing a scalable solution to assist fact-checkers in verifying scientific information.
+This paper presents the system developed by Team NEXA for Task 1 of the CLEF 2026 CheckThat! Lab, focusing on the retrieval of scientific sources for claims found on social media. Given the challenge of linking informal web discourse to formal scientific literature across English, German, and French, we propose a multi-stage retrieval framework. Our approach combines traditional lexical search using BM25 with neural dense retrieval based on multilingual transformer embeddings, using score fusion to integrate lexical and semantic signals. We also investigate cross-encoder re-ranking as an additional refinement step. The system aims to bridge the linguistic and stylistic gap between social media posts and academic abstracts, providing a scalable solution to assist fact-checkers in verifying scientific information.
 \end{abstract}
 
 %%
@@ -77,12 +77,16 @@ url=https://www.dei.unipd.it/~ferro/,
 %% the work being presented. Separate the keywords with commas.
 \begin{keywords}
   Information Retrieval \sep
-  Search Engine \sep
-  CLEF \sep
-  CheckThat! \sep
-  Scientific Claim Verification \sep
+  Multilingual Retrieval \sep
+  Hybrid Retrieval \sep
+  Dense Retrieval \sep
+  BM25 \sep
+  BGE-M3 \sep
+  Score Fusion \sep
+  Cross-Encoder Re-ranking \sep
+  Neural Re-ranking \sep
   Lucene \sep
-  Multilingual Search
+  CLEF CheckThat!
 \end{keywords}
 
 %%
