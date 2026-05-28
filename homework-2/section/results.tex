@@ -134,6 +134,7 @@ We then varied the strictness of the Boolean query, marking the top-IDF terms as
 
 For the IDF pruning sweep, the score climbs from $K{=}10$ to $K{=}30$ and then flattens: $K{=}30$, $40$, and $50$ are identical, since most claims contain fewer than 30 distinct content tokens after stop-word filtering. Smaller values are clearly harmful: at $K{=}15$ the average loses 2.3 points and at $K{=}10$ over six points, because genuine scientific terms get dropped along with ordinary content words. We set $K{=}30$. The locked-in lexical configuration is therefore BM25 ($k_1{=}1.0$, $b{=}0.75$) with field boosts (title 2, abstract 3, authors 1.5), OR mode, and the query pruned to the top 30 IDF tokens.
 
+\newpage
 \subsection{Failed Expansion Approaches}
 \label{subsec:res-expansion}
 
