@@ -278,6 +278,7 @@ On top of the BGE-M3 fusion run we applied the fine-tuned cross-encoder describe
 
 Fine-tuning improves French by 2.2 points and German by 1.7 points but degrades English by 2.7 points, for a net average gain of 0.4 points. The asymmetric effect is consistent with the relative size of the per-language training sets: the English training split is substantially larger and the base checkpoint was already well-calibrated for English-style claim-abstract pairs, so fine-tuning on comparatively fewer English examples provides little additional signal while introducing some overfitting. The smaller French and German training sets, by contrast, shift the model toward the specific vocabulary and phrasing of those languages, yielding clear gains. Given the mixed outcome, the fine-tuned reranker is not included in the primary submitted run.
 
+\newpage
 \subsection{Final Submitted Runs}
 \label{subsec:res-final}
 
